@@ -24,12 +24,15 @@ async function loadCard(ctx: Ctx, id: string) {
 export async function createCardAction(patientId: string, basedOnCardId?: string) {
   return guard<{ id: string }>(async () => {
     const ctx = await getCtx();
-    const patient = await ctx.db.get<PatientRow>("patients", patientId);
+    const [patient, anamRows, settings, consults] = await Promise.all([
+      ctx.db.get<PatientRow>("patients", patientId),
+      ctx.db.select("patient_anamnesis", { where: { patient_id: patientId }, limit: 1 }),
+      getSettings(ctx),
+      ctx.db.select("consultations", { where: { patient_id: patientId }, order: { col: "consulted_at" }, limit: 1 }),
+    ]);
     if (!patient) return { ok: false as const, error: "Пациент не найден" };
-    const [anam] = await ctx.db.select("patient_anamnesis", { where: { patient_id: patientId }, limit: 1 });
-    const anamnesis = anam ? AnamnesisInput.partial().parse(anam) : null;
-    const settings = await getSettings(ctx);
-    const [lastConsult] = await ctx.db.select("consultations", { where: { patient_id: patientId }, order: { col: "consulted_at" }, limit: 1 });
+    const anamnesis = anamRows[0] ? AnamnesisInput.partial().parse(anamRows[0]) : null;
+    const lastConsult = consults[0];
 
     let data: CardData;
     if (basedOnCardId) {

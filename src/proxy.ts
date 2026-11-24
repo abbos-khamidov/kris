@@ -26,8 +26,9 @@ export async function proxy(request: NextRequest) {
         },
       },
     });
-    const { data } = await supabase.auth.getUser();
-    signedIn = !!data.user;
+    // getClaims verifies the JWT signature locally (no network round-trip on every request).
+    const { data } = await supabase.auth.getClaims();
+    signedIn = !!data?.claims?.sub;
   } else {
     signedIn = !!request.cookies.get("kris_session")?.value;
   }

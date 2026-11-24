@@ -64,3 +64,5 @@ public/pdf.worker.min.mjs
 .next-test/
 
 .next-build/
+
+.next-supa/

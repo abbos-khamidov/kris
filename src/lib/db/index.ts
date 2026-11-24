@@ -14,10 +14,11 @@ export const backendMode = () => (isSupabaseConfigured() ? "supabase" : "local")
 export const getCtxOrNull = cache(async (): Promise<Ctx | null> => {
   if (isSupabaseConfigured()) {
     const client = await createSupabaseServer();
-    // getUser() validates the JWT with Supabase Auth (getSession() would trust the cookie).
-    const { data } = await client.auth.getUser();
-    if (!data.user) return null;
-    const user = { id: data.user.id, email: data.user.email ?? "" };
+    // getClaims() verifies the signed JWT locally; getSession() would trust the cookie unverified.
+    const { data } = await client.auth.getClaims();
+    const claims = data?.claims;
+    if (!claims?.sub) return null;
+    const user = { id: claims.sub, email: (claims.email as string | undefined) ?? "" };
     return {
       mode: "supabase",
       user,
