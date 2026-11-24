@@ -47,13 +47,20 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           aria-current={isActive(pathname, href) ? "page" : undefined}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+            "group relative flex min-h-11 items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-all duration-200 active:scale-[0.98] lg:min-h-0",
             isActive(pathname, href)
-              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-foreground",
+              ? "bg-primary/10 font-semibold text-primary shadow-[inset_0_0_0_1px] shadow-primary/15"
+              : "text-muted-foreground hover:translate-x-0.5 hover:bg-secondary hover:text-foreground",
           )}
         >
-          <Icon className="size-4 shrink-0" />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "absolute inset-y-1.5 left-0 w-[3px] origin-center rounded-full bg-primary transition-transform duration-300",
+              isActive(pathname, href) ? "scale-y-100" : "scale-y-0",
+            )}
+          />
+          <Icon className={cn("size-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110", isActive(pathname, href) && "text-primary")} />
           {label}
         </Link>
       ))}
@@ -108,13 +115,13 @@ export function AppShell({ children, email, demo }: { children: React.ReactNode;
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b bg-background px-4 py-3 lg:hidden">
-          <Link href="/" className="font-serif text-lg tracking-[0.16em] text-primary">
+          <Link href="/" className="flex min-h-11 items-center font-serif text-lg tracking-[0.16em] text-primary">
             KRIS SKIN
           </Link>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
               aria-label="Открыть меню"
-              className="rounded-lg p-2 text-muted-foreground hover:bg-secondary"
+              className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-secondary"
             >
               <Menu className="size-5" />
             </SheetTrigger>
@@ -147,10 +154,11 @@ export function AppShell({ children, email, demo }: { children: React.ReactNode;
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 text-[11px]",
-                isActive(pathname, href) ? "text-primary" : "text-muted-foreground",
+                "relative flex flex-col items-center gap-0.5 py-2 text-[11px] transition-colors active:bg-secondary",
+                isActive(pathname, href) ? "font-semibold text-primary" : "text-muted-foreground",
               )}
             >
+              <span aria-hidden="true" className={cn("absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-primary transition-transform duration-300", isActive(pathname, href) ? "scale-x-100" : "scale-x-0")} />
               <Icon className="size-5" />
               {label}
             </Link>

@@ -69,11 +69,11 @@ export function SunGift({ className }: { className?: string }) {
           setOpen(true);
         }}
         className={cn(
-          "grid size-8 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-primary",
+          "grid size-11 place-items-center rounded-md text-primary/75 ring-1 ring-primary/15 transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:ring-primary/40 active:scale-95 lg:size-9",
           className,
         )}
       >
-        <Sun className="size-5" />
+        <Sun className="size-6 lg:size-5" />
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent showCloseButton={false} className="max-w-sm gap-0 p-8 text-center sm:max-w-sm">

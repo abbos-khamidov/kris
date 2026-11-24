@@ -157,7 +157,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
               aria-label={title}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => wrap(mark)}
-              className={cn("h-8 min-w-8 rounded border border-input bg-surface px-2 text-xs hover:border-primary/50 sm:h-7", cls)}
+              className={cn("h-11 min-w-11 rounded border border-input bg-surface px-2 text-xs hover:border-primary/50 sm:h-7 sm:min-w-8", cls)}
             >
               {label}
             </button>
@@ -173,7 +173,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
           placeholder={placeholder}
           disabled={disabled}
           {...(multiline ? { rows } : {})}
-          className={cn("pr-11", multiline && "min-h-20 resize-y")}
+          className={cn("pr-12 sm:pr-11", multiline && "min-h-20 resize-y")}
           aria-label={rest["aria-label"]}
         />
         <button
@@ -184,7 +184,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
           aria-pressed={phase === "recording"}
           title={supported ? "Голосовой ввод" : "Голосовой ввод недоступен в этом браузере"}
           className={cn(
-            "absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-md transition-colors",
+            "absolute right-0.5 top-0.5 grid size-11 place-items-center rounded-md transition-colors sm:right-1.5 sm:top-1.5 sm:size-8",
             phase === "recording"
               ? "bg-destructive text-white"
               : supported

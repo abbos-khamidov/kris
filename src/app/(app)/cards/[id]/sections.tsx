@@ -6,7 +6,11 @@ import { Input } from "@/components/ui/input";
 import { BlockEditor } from "@/components/block-editor";
 import { Field, Segmented, TriField } from "@/components/fields";
 import { FaceEditor } from "@/components/face-editor";
+import { CatalogPicker } from "@/components/catalog-picker";
 import { MediaPicker } from "@/components/media-picker";
+import { TemplateBar } from "@/components/template-bar";
+import { toast } from "sonner";
+import { z } from "zod";
 import { PriceEditor } from "@/components/price-editor";
 import { VoiceInput } from "@/components/voice-input";
 import {
@@ -19,11 +23,14 @@ import {
   TITLE_COLORS,
   mkBlock,
   type Block,
+  ProcedurePlan,
+  ProductItem,
+  Stroke,
   type CardData,
   type ProcedureItem,
-  type ProductItem,
 } from "@/lib/schemas/card";
 import { emptyPrice, uid } from "@/lib/schemas/common";
+import type { TemplateKind } from "@/lib/templates";
 
 export type Patch = (fn: (draft: CardData) => void) => void;
 
@@ -48,8 +55,8 @@ const Box = ({ title, children, hint }: { title?: string; hint?: string; childre
   </section>
 );
 
-const blocksOf = (b: Block[], set: (n: Block[]) => void, label: string, pickImage?: SectionProps["pickImage"]) => (
-  <BlockEditor blocks={b} onChange={set} label={label} onPickImage={pickImage ? (done) => pickImage("patient", done) : undefined} />
+const blocksOf = (b: Block[], set: (n: Block[]) => void, label: string, pickImage?: SectionProps["pickImage"], kind?: TemplateKind) => (
+  <BlockEditor blocks={b} onChange={set} label={label} templateKind={kind} onPickImage={pickImage ? (done) => pickImage("illustration", done) : undefined} />
 );
 
 /* ------------------------------------------------------------ 1. cover */
@@ -163,7 +170,7 @@ export function PersonalSection({ card, patch, onRefresh }: SectionProps & { onR
 export function SkinSection({ card, patch, pickImage }: SectionProps) {
   return (
     <div className="space-y-4">
-      <Box title="Заключение о состоянии кожи">{blocksOf(card.skin.blocks, (n) => patch((c) => void (c.skin.blocks = n)), "Состояние кожи", pickImage)}</Box>
+      <Box title="Заключение о состоянии кожи">{blocksOf(card.skin.blocks, (n) => patch((c) => void (c.skin.blocks = n)), "Состояние кожи", pickImage, "skin")}</Box>
       <Box title="Фотографии" hint="Необязательно. В PDF попадают только выбранные вручную.">
         <div className="flex flex-wrap gap-2">
           {card.skin.photoIds.map((id, i) => (
@@ -192,15 +199,15 @@ export function CareSection({ card, patch, pickImage, faceUrl }: SectionProps) {
         <Field label="Заголовок" htmlFor="care-m">
           <Input id="care-m" value={care.morningTitle} onChange={(e) => patch((c) => void (c.care.morningTitle = e.target.value))} className="h-11 sm:h-8" />
         </Field>
-        {blocksOf(care.morning, (n) => patch((c) => void (c.care.morning = n)), "Утренний уход", pickImage)}
+        {blocksOf(care.morning, (n) => patch((c) => void (c.care.morning = n)), "Утренний уход", pickImage, "morning")}
       </Box>
       <Box title="Вечерний уход">
         <Field label="Заголовок" htmlFor="care-e">
           <Input id="care-e" value={care.eveningTitle} onChange={(e) => patch((c) => void (c.care.eveningTitle = e.target.value))} className="h-11 sm:h-8" />
         </Field>
-        {blocksOf(care.evening, (n) => patch((c) => void (c.care.evening = n)), "Вечерний уход", pickImage)}
+        {blocksOf(care.evening, (n) => patch((c) => void (c.care.evening = n)), "Вечерний уход", pickImage, "evening")}
       </Box>
-      <Box title="Примечания к уходу">{blocksOf(care.notes, (n) => patch((c) => void (c.care.notes = n)), "Примечания к уходу", pickImage)}</Box>
+      <Box title="Примечания к уходу">{blocksOf(care.notes, (n) => patch((c) => void (c.care.notes = n)), "Примечания к уходу", pickImage, "barrier")}</Box>
       <Box title="Схема нанесения средств" hint="Зелёным отмечаются разрешённые зоны, красным — исключённые.">
         <FaceEditor
           imageUrl={faceUrl}
@@ -208,6 +215,19 @@ export function CareSection({ card, patch, pickImage, faceUrl }: SectionProps) {
           onChange={(s) => patch((c) => void (c.care.face.strokes = s))}
           onPickIllustration={() => pickImage("illustration", (id) => patch((c) => void (c.design.imageOverrides.face_illustration = id)))}
         />
+        <div className="flex flex-wrap gap-2">
+          <TemplateBar
+            kind="face_scheme"
+            canSave={care.face.strokes.length > 0}
+            getBody={() => care.face.strokes}
+            onInsert={(body) => {
+              const parsed = z.array(Stroke).safeParse(body);
+              if (!parsed.success) return void toast.error("Схема не подходит");
+              patch((c) => void (c.care.face.strokes = parsed.data.map((st) => ({ ...st, id: uid() }))));
+              toast.success("Схема применена");
+            }}
+          />
+        </div>
       </Box>
       <Box title="Текущий домашний уход пациента" hint="Отметьте, какие имеющиеся средства оставить, заменить, исключить или добавить позднее.">
         {care.homeCare.map((h, i) => (
@@ -234,7 +254,7 @@ export function CareSection({ card, patch, pickImage, faceUrl }: SectionProps) {
 export function ActivesSection({ card, patch, pickImage }: SectionProps) {
   return (
     <div className="space-y-4">
-      <Box title="Активы и лечебные средства">{blocksOf(card.actives.blocks, (n) => patch((c) => void (c.actives.blocks = n)), "Активы", pickImage)}</Box>
+      <Box title="Активы и лечебные средства">{blocksOf(card.actives.blocks, (n) => patch((c) => void (c.actives.blocks = n)), "Активы", pickImage, "actives")}</Box>
       <Box title="Примечание">
         <Field label="Заголовок" htmlFor="act-n">
           <Input id="act-n" value={card.actives.noteTitle} onChange={(e) => patch((c) => void (c.actives.noteTitle = e.target.value))} className="h-11 sm:h-8" />
@@ -252,13 +272,13 @@ export function NutritionSection({ card, patch, pickImage }: SectionProps) {
         <Field label="Заголовок" htmlFor="nu-m">
           <Input id="nu-m" value={card.nutrition.mainTitle} onChange={(e) => patch((c) => void (c.nutrition.mainTitle = e.target.value))} className="h-11 sm:h-8" />
         </Field>
-        {blocksOf(card.nutrition.main, (n) => patch((c) => void (c.nutrition.main = n)), "Питание", pickImage)}
+        {blocksOf(card.nutrition.main, (n) => patch((c) => void (c.nutrition.main = n)), "Питание", pickImage, "nutrition")}
       </Box>
       <Box title="Дополнения">
         <Field label="Заголовок" htmlFor="nu-e">
           <Input id="nu-e" value={card.nutrition.extraTitle} onChange={(e) => patch((c) => void (c.nutrition.extraTitle = e.target.value))} className="h-11 sm:h-8" />
         </Field>
-        {blocksOf(card.nutrition.extra, (n) => patch((c) => void (c.nutrition.extra = n)), "Дополнения к питанию", pickImage)}
+        {blocksOf(card.nutrition.extra, (n) => patch((c) => void (c.nutrition.extra = n)), "Дополнения к питанию", pickImage, "nutrition")}
       </Box>
     </div>
   );
@@ -271,13 +291,13 @@ export function VitaminsSection({ card, patch, pickImage }: SectionProps) {
         <Field label="Заголовок" htmlFor="vi-s">
           <Input id="vi-s" value={card.vitamins.supplementsTitle} onChange={(e) => patch((c) => void (c.vitamins.supplementsTitle = e.target.value))} className="h-11 sm:h-8" />
         </Field>
-        {blocksOf(card.vitamins.supplements, (n) => patch((c) => void (c.vitamins.supplements = n)), "Витамины", pickImage)}
+        {blocksOf(card.vitamins.supplements, (n) => patch((c) => void (c.vitamins.supplements = n)), "Витамины", pickImage, "vitamins")}
       </Box>
       <Box title="Анализы">
         <Field label="Заголовок" htmlFor="vi-t">
           <Input id="vi-t" value={card.vitamins.testsTitle} onChange={(e) => patch((c) => void (c.vitamins.testsTitle = e.target.value))} className="h-11 sm:h-8" />
         </Field>
-        {blocksOf(card.vitamins.tests, (n) => patch((c) => void (c.vitamins.tests = n)), "Анализы", pickImage)}
+        {blocksOf(card.vitamins.tests, (n) => patch((c) => void (c.vitamins.tests = n)), "Анализы", pickImage, "tests")}
       </Box>
     </div>
   );
@@ -296,8 +316,9 @@ const emptyProduct = (): ProductItem => ({
   url: "",
 });
 
-export function ProductsSection({ card, patch, onPickCatalog }: SectionProps & { onPickCatalog?: () => void }) {
+export function ProductsSection({ card, patch }: SectionProps) {
   const items = card.products.items;
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const setItem = (i: number, fn: (it: ProductItem) => void) => patch((c) => fn(c.products.items[i]));
   const swap = (i: number, j: number) => patch((c) => {
     if (j < 0 || j >= c.products.items.length) return;
@@ -367,12 +388,22 @@ export function ProductsSection({ card, patch, onPickCatalog }: SectionProps & {
         <Button type="button" className="h-11 sm:h-8" onClick={() => patch((c) => void c.products.items.push(emptyProduct()))}>
           <Plus /> Добавить средство
         </Button>
-        {onPickCatalog && (
-          <Button type="button" variant="outline" className="h-11 sm:h-8" onClick={onPickCatalog}>
-            Из каталога
-          </Button>
-        )}
+        <Button type="button" variant="outline" className="h-11 sm:h-8" onClick={() => setCatalogOpen(true)}>
+          Из каталога
+        </Button>
+        <TemplateBar
+          kind="products"
+          canSave={items.length > 0}
+          getBody={() => items.map((it) => ({ ...it, productId: null }))}
+          onInsert={(body) => {
+            const parsed = z.array(ProductItem).safeParse(body);
+            if (!parsed.success) return void toast.error("Шаблон не подходит к этому разделу");
+            patch((c) => void c.products.items.push(...parsed.data.map((it) => ({ ...it, id: uid(), variants: it.variants.map((v) => ({ ...v, id: uid() })) }))));
+            toast.success("Набор вставлен — проверьте цены");
+          }}
+        />
       </div>
+      <CatalogPicker open={catalogOpen} onClose={() => setCatalogOpen(false)} onAdd={(list) => patch((c) => void c.products.items.push(...list))} />
       <Box title="Примечание внизу страницы">
         <VoiceInput value={card.products.footnote} onChange={(v) => patch((c) => void (c.products.footnote = v))} rows={3} aria-label="Примечание внизу страницы" />
       </Box>
@@ -451,9 +482,22 @@ export function ProceduresSection({ card, patch }: SectionProps) {
           </Button>
         </Box>
       ))}
-      <Button type="button" className="h-11 sm:h-8" disabled={plans.length >= 6} onClick={() => patch((c) => void c.procedures.plans.push({ id: uid(), title: c.procedures.plans.length ? `Вариант ${c.procedures.plans.length + 1}` : "Основной план", items: [emptyProc()] }))}>
-        <Plus /> {plans.length ? "Альтернативный план" : "Добавить план"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" className="h-11 sm:h-8" disabled={plans.length >= 6} onClick={() => patch((c) => void c.procedures.plans.push({ id: uid(), title: c.procedures.plans.length ? `Вариант ${c.procedures.plans.length + 1}` : "Основной план", items: [emptyProc()] }))}>
+          <Plus /> {plans.length ? "Альтернативный план" : "Добавить план"}
+        </Button>
+        <TemplateBar
+          kind="procedures"
+          canSave={plans.length > 0}
+          getBody={() => plans}
+          onInsert={(body) => {
+            const parsed = z.array(ProcedurePlan).safeParse(body);
+            if (!parsed.success) return void toast.error("Шаблон не подходит к этому разделу");
+            patch((c) => void c.procedures.plans.push(...parsed.data.map((p) => ({ ...p, id: uid(), items: p.items.map((i) => ({ ...i, id: uid() })) }))));
+            toast.success("План вставлен — проверьте стоимость и дозировки");
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -462,7 +506,7 @@ export function ProceduresSection({ card, patch }: SectionProps) {
 export function ConclusionSection({ card, patch, pickImage }: SectionProps) {
   return (
     <div className="space-y-4">
-      <Box title="Заключение">{blocksOf(card.conclusion.blocks, (n) => patch((c) => void (c.conclusion.blocks = n)), "Заключение", pickImage)}</Box>
+      <Box title="Заключение">{blocksOf(card.conclusion.blocks, (n) => patch((c) => void (c.conclusion.blocks = n)), "Заключение", pickImage, "conclusion")}</Box>
       <Box title="Кнопка">
         <Field label="Текст кнопки" htmlFor="co-btn">
           <Input id="co-btn" value={card.conclusion.buttonLabel} onChange={(e) => patch((c) => void (c.conclusion.buttonLabel = e.target.value))} className="h-11 sm:h-8" />

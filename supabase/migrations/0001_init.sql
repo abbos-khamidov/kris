@@ -199,6 +199,7 @@ create table public.patient_cards (
   version int not null default 0,               -- number of approved versions so far
   based_on_card_id uuid references public.patient_cards (id) on delete set null,
   approved_at timestamptz,
+  archived_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

@@ -29,12 +29,19 @@ async function startLocalSession(user: { id: string; email: string }) {
   });
 }
 
+/** Local demo mode also accepts a short login (e.g. "kris"); Supabase always requires an e-mail. */
+const localLogin = z.object({
+  email: z.string().trim().min(2, "Введите логин").max(120),
+  password: z.string().min(1, "Введите пароль").max(200),
+});
+
 export async function loginAction(_: AuthState, form: FormData): Promise<AuthState> {
-  const parsed = credentials.safeParse({ email: form.get("email"), password: form.get("password") });
+  const supabase = isSupabaseConfigured();
+  const parsed = (supabase ? credentials : localLogin).safeParse({ email: form.get("email"), password: form.get("password") });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { email, password } = parsed.data;
 
-  if (isSupabaseConfigured()) {
+  if (supabase) {
     const supabase = await createSupabaseServer();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: "Неверный email или пароль" };

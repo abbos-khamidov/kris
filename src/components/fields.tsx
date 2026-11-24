@@ -56,7 +56,7 @@ export function Segmented<T extends string | number>({
             aria-checked={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              "min-h-11 rounded-md border px-3 text-sm transition-colors sm:min-h-9",
+              "min-h-11 min-w-11 rounded-md border px-3 text-sm transition-colors sm:min-h-9 sm:min-w-0",
               active
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-input bg-surface text-foreground/80 hover:border-primary/50",

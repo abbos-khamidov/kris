@@ -105,6 +105,16 @@
   }
 }
 
+/* Touch devices (phones AND tablets, any width): every control is at least 44x44. */
+@media (pointer: coarse) {
+  :where(button, [role="radio"], [role="tab"], select, summary):not([data-compact]) {
+    min-height: 44px;
+  }
+  :where(button, [role="radio"], [role="tab"]):not([data-compact]):not(:where(.w-full, [class*="flex-1"])) {
+    min-width: 44px;
+  }
+}
+
 @layer utilities {
   .animate-fade-in {
     animation: fade-in 0.25s ease-out both;

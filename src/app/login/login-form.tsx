@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction, setupAction, type AuthState } from "./actions";
 
-export function LoginForm({ mode }: { mode: "login" | "setup" }) {
+export function LoginForm({ mode, supabase }: { mode: "login" | "setup"; supabase: boolean }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(
     mode === "setup" ? setupAction : loginAction,
     {},
@@ -20,8 +20,8 @@ export function LoginForm({ mode }: { mode: "login" | "setup" }) {
         </div>
       )}
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Label htmlFor="email">{supabase || mode === "setup" ? "Email" : "Email или логин"}</Label>
+        <Input id="email" name="email" type={supabase || mode === "setup" ? "email" : "text"} autoComplete="username" autoCapitalize="none" required />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Пароль</Label>
@@ -30,7 +30,7 @@ export function LoginForm({ mode }: { mode: "login" | "setup" }) {
           name="password"
           type="password"
           autoComplete={mode === "setup" ? "new-password" : "current-password"}
-          minLength={8}
+          minLength={mode === "setup" ? 8 : undefined}
           required
         />
       </div>

@@ -1,11 +1,15 @@
 "use client";
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Copy, Library, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
+import { TemplateBar } from "@/components/template-bar";
+import type { TemplateKind } from "@/lib/templates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { VoiceInput } from "@/components/voice-input";
-import { BLOCK_LABEL, BLOCK_TYPES, mkBlock, type Block, type BlockType } from "@/lib/schemas/card";
+import { BLOCK_LABEL, BLOCK_TYPES, Block, mkBlock, type BlockType } from "@/lib/schemas/card";
 import { uid } from "@/lib/schemas/common";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +18,8 @@ export interface BlockEditorProps {
   onChange: (next: Block[]) => void;
   /** Label for screen readers and the empty state. */
   label: string;
-  /** Opens the library picker for this field (set by the card editor once the library exists). */
-  onPickFromLibrary?: () => void;
+  /** Enables "From library" / "Save as template" for this field. */
+  templateKind?: TemplateKind;
   /** Lets the parent choose a media asset for image blocks. */
   onPickImage?: (done: (assetId: string) => void) => void;
 }
@@ -32,7 +36,7 @@ const move = <T,>(list: T[], from: number, to: number): T[] => {
  * The document is built from blocks, not fixed inputs (ADR-010). Each block can be typed, dictated,
  * or filled from the approved-template library; blocks can be added, moved, duplicated and deleted.
  */
-export function BlockEditor({ blocks, onChange, label, onPickFromLibrary, onPickImage }: BlockEditorProps) {
+export function BlockEditor({ blocks, onChange, label, templateKind, onPickImage }: BlockEditorProps) {
   const set = (i: number, patch: Partial<Block>) => onChange(blocks.map((b, idx) => (idx === i ? { ...b, ...patch } : b)));
   const add = (type: BlockType) => onChange([...blocks, mkBlock(type)]);
 
@@ -91,10 +95,18 @@ export function BlockEditor({ blocks, onChange, label, onPickFromLibrary, onPick
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        {onPickFromLibrary && (
-          <Button type="button" variant="outline" className="h-11 sm:h-8" onClick={onPickFromLibrary}>
-            <Library /> Из библиотеки
-          </Button>
+        {templateKind && (
+          <TemplateBar
+            kind={templateKind}
+            canSave={blocks.length > 0}
+            getBody={() => blocks}
+            onInsert={(body) => {
+              const parsed = z.array(Block).safeParse(body);
+              if (!parsed.success) return void toast.error("Шаблон не подходит к этому разделу");
+              onChange([...blocks, ...parsed.data.map((b) => ({ ...b, id: uid() }))]);
+              toast.success("Вставлено — проверьте текст");
+            }}
+          />
         )}
       </div>
     </div>

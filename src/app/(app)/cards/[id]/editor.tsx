@@ -6,6 +6,7 @@ import { AlertTriangle, ChevronLeft, ChevronRight, Download, Eye, FileCheck2, Lo
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { MediaPicker } from "@/components/media-picker";
+import { PatientPhotoPicker } from "@/components/patient-photo-picker";
 import { PdfViewer } from "@/components/pdf-viewer";
 import { SaveBadge } from "@/components/save-badge";
 import { useAutosave } from "@/hooks/use-autosave";
@@ -351,7 +352,7 @@ export function CardEditor({
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-background px-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
-        <Link href={`/patients/${patientId}?tab=cards`} className="text-xs text-muted-foreground hover:text-primary">
+        <Link href={`/patients/${patientId}?tab=cards`} className="inline-flex min-h-11 items-center text-xs text-muted-foreground hover:text-primary lg:min-h-0">
           ← {docCtx.patient.fullName}
         </Link>
       </div>
@@ -362,7 +363,18 @@ export function CardEditor({
     </div>
   );
 
-  const pickerNode = picker && (
+  const pickerNode = picker && picker.category === "patient" ? (
+    <PatientPhotoPicker
+      patientId={patientId}
+      open
+      onClose={() => setPicker(null)}
+      onPick={(id) => {
+        picker.done(id);
+        setPicker(null);
+      }}
+    />
+  ) : (
+    picker && (
     <MediaPicker
       open
       category={picker.category}
@@ -372,6 +384,7 @@ export function CardEditor({
         setPicker(null);
       }}
     />
+    )
   );
 
   /* ================================================== desktop: navigation · editor · PDF */

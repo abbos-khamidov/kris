@@ -14,7 +14,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}/login`,
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { KRIS_DATA_DIR: ".data-test", SESSION_SECRET: "test-secret-not-for-production-0123456789" },
+    env: { NEXT_DIST_DIR: ".next-test", KRIS_DATA_DIR: ".data-test", SESSION_SECRET: "test-secret-not-for-production-0123456789" },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

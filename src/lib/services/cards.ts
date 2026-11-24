@@ -17,6 +17,7 @@ export interface CardRow {
   version: number;
   based_on_card_id: string | null;
   approved_at: string | null;
+  archived_at?: string | null;
 }
 
 export interface AssetRef {

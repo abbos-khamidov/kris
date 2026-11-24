@@ -47,6 +47,7 @@ export async function createCardAction(patientId: string, basedOnCardId?: string
       version: 0,
       based_on_card_id: basedOnCardId ?? null,
       approved_at: null,
+      archived_at: null,
     });
     await logActivity(ctx, "card.create", "card", row.id, { patient_id: patientId, cloned: !!basedOnCardId });
     revalidatePath("/cards");
@@ -87,6 +88,19 @@ export async function deleteDraftAction(cardId: string) {
     await ctx.db.remove("patient_cards", cardId);
     await logActivity(ctx, "card.delete_draft", "card", cardId, { patient_id: card.patient_id });
     revalidatePath("/cards");
+    return ok();
+  });
+}
+
+/** Archiving hides a card from the working lists; approved versions and PDFs stay untouched. */
+export async function archiveCardAction(cardId: string, archived: boolean) {
+  return guard(async () => {
+    const ctx = await getCtx();
+    const card = await loadCard(ctx, cardId);
+    await ctx.db.update("patient_cards", cardId, { archived_at: archived ? new Date().toISOString() : null });
+    await logActivity(ctx, archived ? "card.archive" : "card.restore", "card", cardId, { patient_id: card.patient_id });
+    revalidatePath("/cards");
+    revalidatePath(`/patients/${card.patient_id}`);
     return ok();
   });
 }
