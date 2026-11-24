@@ -42,7 +42,16 @@ export interface Db {
   select<T = Row>(table: Table, q?: Query): Promise<(T & Row)[]>;
   get<T = Row>(table: Table, id: string): Promise<(T & Row) | null>;
   insert<T = Row>(table: Table, values: Record<string, unknown>): Promise<T & Row>;
-  update<T = Row>(table: Table, id: string, values: Record<string, unknown>): Promise<T & Row>;
+  /**
+   * With `ifUpdatedAt` the write succeeds only if the row still has that updated_at
+   * (optimistic concurrency); otherwise throws ConflictError.
+   */
+  update<T = Row>(
+    table: Table,
+    id: string,
+    values: Record<string, unknown>,
+    opts?: { ifUpdatedAt?: string },
+  ): Promise<T & Row>;
   remove(table: Table, id: string): Promise<void>;
   count(table: Table, where?: Where): Promise<number>;
 }
@@ -74,3 +83,10 @@ export interface Ctx {
 }
 
 export const BUCKET = "kris-private";
+
+export class ConflictError extends Error {
+  constructor() {
+    super("Запись была изменена на другом устройстве");
+    this.name = "ConflictError";
+  }
+}

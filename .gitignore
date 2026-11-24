@@ -53,3 +53,7 @@ assets-private/
 medical-data/
 .claude/
 .mcp.json
+
+.data*/
+test-results/
+playwright-report/

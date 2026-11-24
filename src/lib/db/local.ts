@@ -3,11 +3,11 @@ import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Db, Query, Row, Storage, Table, UploadPlan, Where } from "./types";
-import { TABLES } from "./types";
+import { ConflictError, TABLES } from "./types";
 
 /** Local demo backend: JSON files in .data/ (gitignored). Never used on Vercel. */
 
-const ROOT = path.join(process.cwd(), ".data");
+const ROOT = process.env.KRIS_DATA_DIR ? path.resolve(process.env.KRIS_DATA_DIR) : path.join(process.cwd(), ".data");
 const DB_DIR = path.join(ROOT, "db");
 const FILES_DIR = path.join(ROOT, "files");
 
@@ -97,12 +97,13 @@ export function localDb(ownerId: string): Db {
         return row as never;
       });
     },
-    update(table, id, values) {
+    update(table, id, values, opts) {
       assertTable(table);
       return locked(async () => {
         const rows = await readTable(table);
         const i = rows.findIndex((r) => r.id === id && r.owner_id === ownerId);
         if (i < 0) throw new Error("Запись не найдена");
+        if (opts?.ifUpdatedAt && rows[i].updated_at !== opts.ifUpdatedAt) throw new ConflictError();
         const { id: _i, owner_id: _o, created_at: _c, ...safe } = values;
         void _i;
         void _o;

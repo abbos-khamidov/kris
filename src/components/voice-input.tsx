@@ -48,7 +48,9 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
   const [consentOpen, setConsentOpen] = useState(false);
   const [undo, setUndo] = useState<string | null>(null);
   const sel = useRef({ start: 0, end: 0 });
-  const supported = typeof window !== "undefined" && getSpeechProvider() !== null;
+  // Detected after mount: server and first client render must match (hydration).
+  const [supported, setSupported] = useState(false);
+  useEffect(() => setSupported(getSpeechProvider() !== null), []);
 
   useEffect(() => {
     if (phase !== "recording") return;

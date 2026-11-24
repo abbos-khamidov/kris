@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Db, Query, Storage, Table, UploadPlan } from "./types";
-import { BUCKET } from "./types";
+import { BUCKET, ConflictError } from "./types";
 
 /**
  * Supabase backend. Uses the *user-scoped* client (anon key + user JWT), so Postgres RLS and
@@ -49,20 +49,17 @@ export function supabaseDb(client: SupabaseClient, ownerId: string): Db {
       if (error) fail(error);
       return data as never;
     },
-    async update(table, id, values) {
+    async update(table, id, values, opts) {
       const { id: _i, owner_id: _o, created_at: _c, ...safe } = values;
       void _i;
       void _o;
       void _c;
-      const { data, error } = await client
-        .from(table)
-        .update(safe)
-        .eq("id", id)
-        .eq("owner_id", ownerId)
-        .select()
-        .single();
+      let req = client.from(table).update(safe).eq("id", id).eq("owner_id", ownerId);
+      if (opts?.ifUpdatedAt) req = req.eq("updated_at", opts.ifUpdatedAt);
+      const { data, error } = await req.select();
       if (error) fail(error);
-      return data as never;
+      if (!data || data.length === 0) throw new ConflictError();
+      return data[0] as never;
     },
     async remove(table: Table, id: string) {
       const { error } = await client.from(table).delete().eq("id", id).eq("owner_id", ownerId);
