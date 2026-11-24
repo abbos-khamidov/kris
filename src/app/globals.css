@@ -68,7 +68,7 @@
   --border: #e4dbd2;
   --input: #dcd1c6;
   --ring: #b99b86;
-  --radius: 0.75rem;
+  --radius: 0.375rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #292524;
   --sidebar-primary: #791f2b;
@@ -111,6 +111,32 @@
   }
 }
 
+/* Owner's personal gift: slow, quiet motion only. */
+.sun-rays {
+  transform-origin: 60px 60px;
+  animation: sun-turn 60s linear infinite;
+}
+.sun-core {
+  transform-origin: 60px 60px;
+  animation: sun-breathe 5s ease-in-out infinite;
+}
+.sun-open {
+  animation: fade-in 0.6s ease-out both;
+}
+.gift-text {
+  animation: fade-in 0.8s ease-out 0.15s both;
+}
+@keyframes sun-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sun-breathe {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -123,7 +149,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-in {
+  .animate-fade-in,
+  .sun-rays,
+  .sun-core,
+  .sun-open,
+  .gift-text {
     animation: none;
   }
 }
