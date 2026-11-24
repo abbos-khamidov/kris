@@ -365,3 +365,9 @@ create policy "kris files: owner update" on storage.objects for update to authen
   using (bucket_id = 'kris-private' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "kris files: owner delete" on storage.objects for delete to authenticated
   using (bucket_id = 'kris-private' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------------------------------------------------------------- API privileges
+-- Anonymous visitors get nothing; signed-in users reach their own rows only (RLS above).
+revoke all on all tables in schema public from anon;
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
