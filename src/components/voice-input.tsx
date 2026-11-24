@@ -30,6 +30,8 @@ interface Props {
   disabled?: boolean;
   className?: string;
   "aria-label"?: string;
+  /** Shows **bold** / ==highlight== / !!important!! buttons that wrap the selected text. */
+  format?: boolean;
 }
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -38,7 +40,7 @@ const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${Str
  * Text field with dictation (ADR-009). Manual typing always works; the microphone is an addition.
  * Nothing is inserted until the specialist confirms the transcript, and the last insertion can be undone.
  */
-export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeholder, id, disabled, className, ...rest }: Props) {
+export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeholder, id, disabled, className, format, ...rest }: Props) {
   const fieldRef = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null);
   const sessionRef = useRef<SpeechSession | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -120,11 +122,48 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
     });
   };
 
+  const wrap = (mark: string) => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const a = el.selectionStart ?? 0;
+    const b = el.selectionEnd ?? 0;
+    if (a === b) return void el.focus();
+    const next = `${value.slice(0, a)}${mark}${value.slice(a, b)}${mark}${value.slice(b)}`;
+    onChange(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(a + mark.length, b + mark.length);
+    });
+  };
+
   const selected = value.slice(sel.current.start, sel.current.end);
   const Field = multiline ? Textarea : Input;
 
   return (
     <div className={cn("space-y-2", className)}>
+      {format && (
+        <div className="flex gap-1" role="toolbar" aria-label="Форматирование">
+          {(
+            [
+              ["**", "Ж", "Жирный (выделите текст)", "font-bold"],
+              ["==", "Цвет", "Бордовое выделение", "text-primary font-semibold"],
+              ["!!", "!", "Важное", "text-destructive font-bold"],
+            ] as const
+          ).map(([mark, label, title, cls]) => (
+            <button
+              key={mark}
+              type="button"
+              title={title}
+              aria-label={title}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => wrap(mark)}
+              className={cn("h-8 min-w-8 rounded border border-input bg-surface px-2 text-xs hover:border-primary/50 sm:h-7", cls)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="relative">
         <Field
           ref={fieldRef as never}

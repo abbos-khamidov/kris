@@ -78,6 +78,8 @@ function Logout() {
 export function AppShell({ children, email, demo }: { children: React.ReactNode; email: string; demo: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // The card editor is a full-bleed workspace with its own step bar instead of the bottom navigation.
+  const bleed = pathname.startsWith("/cards/") && pathname.split("/").length === 3;
   const mobileItems = NAV.filter((n) => MOBILE_MAIN.includes(n.href));
   const moreActive = !MOBILE_MAIN.some((h) => isActive(pathname, h));
 
@@ -134,10 +136,10 @@ export function AppShell({ children, email, demo }: { children: React.ReactNode;
           </Sheet>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 lg:px-8 lg:py-8 lg:pb-8">{children}</main>
+        <main className={bleed ? "w-full flex-1" : "mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 lg:px-8 lg:py-8 lg:pb-8"}>{children}</main>
 
         <nav
-          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+          className={cn("fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden", bleed && "hidden")}
           aria-label="Основная навигация"
         >
           {mobileItems.map(({ href, label, icon: Icon }) => (

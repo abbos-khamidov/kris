@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ArchiveButton } from "./archive-button";
 import { AnamnesisForm } from "./anamnesis-form";
 import { ConsultationForm } from "./consultation-form";
+import { NewCardButtons } from "./new-card-buttons";
+import type { CardRow } from "@/lib/services/cards";
 import { PatientForm } from "../patient-form";
 import { getCtx } from "@/lib/db";
 import { ageFromBirthDate, formatDateRu, pluralYears } from "@/lib/format";
@@ -15,6 +17,7 @@ const TABS = [
   { key: "info", label: "Общая информация" },
   { key: "anamnesis", label: "Анамнез" },
   { key: "consultations", label: "Консультации" },
+  { key: "cards", label: "Карты пациента" },
   { key: "history", label: "История изменений" },
 ] as const;
 
@@ -95,6 +98,7 @@ export default async function PatientPage({
       )}
       {active === "anamnesis" && <AnamnesisTab id={id} />}
       {active === "consultations" && <ConsultationsTab id={id} />}
+      {active === "cards" && <CardsTab id={id} />}
       {active === "history" && <HistoryTab id={id} />}
     </div>
   );
@@ -133,6 +137,32 @@ async function ConsultationsTab({ id }: { id: string }) {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+async function CardsTab({ id }: { id: string }) {
+  const ctx = await getCtx();
+  const cards = await ctx.db.select<CardRow>("patient_cards", { where: { patient_id: id }, order: { col: "updated_at" } });
+  return (
+    <div className="space-y-5">
+      <NewCardButtons patientId={id} previousCardId={cards[0]?.id ?? null} />
+      {cards.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Карт пока нет.</p>
+      ) : (
+        <ul className="divide-y rounded-md border bg-surface">
+          {cards.map((c) => (
+            <li key={c.id}>
+              <Link href={`/cards/${c.id}`} className="flex items-center justify-between gap-4 px-4 py-3 text-sm hover:bg-secondary/60">
+                <span>{c.title}</span>
+                <span className={c.status === "approved" ? "text-green-800" : "text-amber-800"}>
+                  {c.status === "approved" ? `Утверждена · версия ${c.version}` : c.version > 0 ? "Новая версия" : "Черновик"}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

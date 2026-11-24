@@ -20,7 +20,7 @@ export function Field({
 }) {
   const labelId = useId();
   return (
-    <div role="group" aria-labelledby={labelId} className={cn("space-y-1.5", className)}>
+    <div role={htmlFor ? undefined : "group"} aria-labelledby={htmlFor ? undefined : labelId} className={cn("space-y-1.5", className)}>
       <Label id={labelId} htmlFor={htmlFor} className="text-[13px] font-medium">
         {label}
       </Label>
