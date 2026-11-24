@@ -62,9 +62,11 @@ export const TITLE_COLORS = ["white", "burgundy", "dark"] as const;
 
 export const BRAND_ROLES = [
   "cover",
-  "background",
+  "bg_products",
+  "bg_room",
   "face_illustration",
-  "side_actives",
+  "side_actives_top",
+  "side_actives_bottom",
   "side_nutrition",
   "side_vitamins",
   "specialist",

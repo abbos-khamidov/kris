@@ -1,12 +1,10 @@
 import type { Price } from "./schemas/common";
 
 const NBSP = " ";
-const NNBSP = " ";
-
-/** 12500 -> "12 500" with non-breaking thin spaces so a price never wraps mid-number. */
+/** 12500 -> "12 500" with no-break spaces so a price never wraps mid-number. */
 export function formatAmount(n: number): string {
   const s = Math.round(n).toString();
-  return s.replace(/\B(?=(\d{3})+(?!\d))/g, NNBSP);
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
 }
 
 /** Single place where prices become text — used by the UI and the PDF alike. */
@@ -20,7 +18,7 @@ export function formatPrice(p: Price | null | undefined): string {
       return p.text.trim();
     case "range":
       if (p.amount == null) return "";
-      return p.max != null ? `${formatAmount(p.amount)}–${formatAmount(p.max)}${rub}` : `${formatAmount(p.amount)}${rub}`;
+      return p.max != null ? `${formatAmount(p.amount)}${NBSP}–${NBSP}${formatAmount(p.max)}${rub}` : `${formatAmount(p.amount)}${rub}`;
     case "from":
       return p.amount == null ? "" : `от${NBSP}${formatAmount(p.amount)}${rub}`;
     case "approx":
