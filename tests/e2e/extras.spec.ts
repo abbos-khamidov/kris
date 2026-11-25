@@ -52,7 +52,7 @@ test("sun gift is reachable from the phone menu", async ({ browser }) => {
   const page = await ctx.newPage();
   await page.goto("/login");
   await ready(page);
-  await page.getByLabel("Email или логин").fill("owner@example.test");
+  await page.getByLabel("Логин или email").fill("owner@example.test");
   await page.getByLabel("Пароль").fill("correct-horse-battery");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL("/");
@@ -65,7 +65,7 @@ test("sun gift is reachable from the phone menu", async ({ browser }) => {
 test("archive: patients and cards can be archived and restored", async ({ page }) => {
   await page.goto("/login");
   await ready(page);
-  await page.getByLabel("Email или логин").fill("owner@example.test");
+  await page.getByLabel("Логин или email").fill("owner@example.test");
   await page.getByLabel("Пароль").fill("correct-horse-battery");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL("/");

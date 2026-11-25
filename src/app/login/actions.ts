@@ -14,6 +14,8 @@ import { createSupabaseServer, isSupabaseConfigured } from "@/lib/supabase/serve
 
 export type AuthState = { error?: string };
 
+const LOGIN_DOMAIN = "kris-skin.app";
+
 const credentials = z.object({
   email: z.string().trim().email("Введите корректный email"),
   password: z.string().min(8, "Пароль — не менее 8 символов").max(200),
@@ -37,7 +39,10 @@ const localLogin = z.object({
 
 export async function loginAction(_: AuthState, form: FormData): Promise<AuthState> {
   const supabase = isSupabaseConfigured();
-  const parsed = (supabase ? credentials : localLogin).safeParse({ email: form.get("email"), password: form.get("password") });
+  // Convenience: a short login ("kris") is expanded to the owner's service address.
+  const rawId = String(form.get("email") ?? "").trim();
+  const id = supabase && rawId && !rawId.includes("@") ? `${rawId.toLowerCase()}@${LOGIN_DOMAIN}` : rawId;
+  const parsed = (supabase ? credentials : localLogin).safeParse({ email: id, password: form.get("password") });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { email, password } = parsed.data;
 

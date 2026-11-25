@@ -20,8 +20,8 @@ export function LoginForm({ mode, supabase }: { mode: "login" | "setup"; supabas
         </div>
       )}
       <div className="space-y-1.5">
-        <Label htmlFor="email">{supabase || mode === "setup" ? "Email" : "Email или логин"}</Label>
-        <Input id="email" name="email" type={supabase || mode === "setup" ? "email" : "text"} autoComplete="username" autoCapitalize="none" required />
+        <Label htmlFor="email">{mode === "setup" ? "Email" : "Логин или email"}</Label>
+        <Input id="email" name="email" type={mode === "setup" ? "email" : "text"} autoComplete="username" autoCapitalize="none" required />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">Пароль</Label>

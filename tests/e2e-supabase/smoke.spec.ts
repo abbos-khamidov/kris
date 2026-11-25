@@ -33,7 +33,7 @@ test("anonymous visitors cannot read or write any data (RLS + revoked grants)", 
 test("real Supabase: login, brand images, patient, card, approve, download, isolation of private files", async ({ page, request }) => {
   await page.goto("/login");
   await ready(page);
-  await page.getByLabel("Email").fill(EMAIL);
+  await page.getByLabel("Логин или email").fill(EMAIL);
   await page.getByLabel("Пароль").fill(PASSWORD);
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL("/", { timeout: 30_000 });
@@ -41,7 +41,7 @@ test("real Supabase: login, brand images, patient, card, approve, download, isol
   // wrong password is rejected
   // (checked implicitly by the e2e suite in local mode; here we verify the session works)
 
-  if (fs.existsSync(BRAND_DIR)) {
+  if (fs.existsSync(BRAND_DIR) && !process.env.KRIS_SKIP_BRAND) {
     await page.goto("/settings");
     await ready(page);
     const files = fs.readdirSync(BRAND_DIR).filter((f) => f.endsWith(".jpg")).map((f) => path.join(BRAND_DIR, f));
