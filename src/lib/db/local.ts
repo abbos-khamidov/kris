@@ -145,6 +145,16 @@ export async function localAppendRaw(table: Table, row: Row): Promise<void> {
   });
 }
 
+export async function localUpdateRaw(table: Table, id: string, patch: Record<string, unknown>): Promise<void> {
+  await locked(async () => {
+    const rows = await readTable(table);
+    const i = rows.findIndex((r) => r.id === id);
+    if (i < 0) throw new Error("Запись не найдена");
+    rows[i] = { ...rows[i], ...patch, updated_at: new Date().toISOString() } as Row;
+    await writeTable(table, rows);
+  });
+}
+
 /* ---------- storage ---------- */
 
 let secretCache: string | null = null;

@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes, randomUUID, scrypt as scryptCb, timingSafeEqual, createHmac } from "node:crypto";
 import { promisify } from "node:util";
-import { localAppendRaw, localReadAll, localSecret } from "@/lib/db/local";
+import { localAppendRaw, localReadAll, localSecret, localUpdateRaw } from "@/lib/db/local";
 import type { Row, SessionUser } from "@/lib/db/types";
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, len: number) => Promise<Buffer>;
@@ -40,6 +40,10 @@ export async function createLocalUser(email: string, password: string, displayNa
   } as Row;
   await localAppendRaw("profiles", row);
   return { id, email: row.email as string };
+}
+
+export async function setLocalPassword(userId: string, password: string) {
+  await localUpdateRaw("profiles", userId, { password_hash: await hash(password) });
 }
 
 export async function checkLocalCredentials(email: string, password: string): Promise<SessionUser | null> {
