@@ -2,6 +2,7 @@ import { getCtx } from "@/lib/db";
 import { BRAND_INFO } from "@/lib/brand";
 import { BRAND_ROLES } from "@/lib/schemas/card";
 import { getSettings } from "@/lib/services/settings";
+import { AppearanceForm } from "./appearance-form";
 import { BrandImages } from "./brand-images";
 import { PasswordForm } from "./password-form";
 import { SettingsForm } from "./settings-form";
@@ -28,6 +29,7 @@ export default async function SettingsPage() {
     <div className="animate-fade-in mx-auto max-w-3xl space-y-8">
       <h1 className="text-2xl">Настройки</h1>
       <SettingsForm initial={settings} />
+      <AppearanceForm />
       <PasswordForm />
       <section className="space-y-3">
         <div>

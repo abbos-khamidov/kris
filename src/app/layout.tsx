@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Hydrated } from "@/components/hydrated";
+import { PwaRegister } from "@/components/pwa-register";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ANTI_FLASH } from "@/lib/theme";
 import "./globals.css";
 
 const manrope = localFont({
@@ -26,6 +28,7 @@ export const metadata: Metadata = {
   title: { default: "KRIS SKIN", template: "%s · KRIS SKIN" },
   description: "Рабочее пространство косметолога: карты пациентов, рекомендации, PDF.",
   manifest: "/manifest.webmanifest",
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
   applicationName: "KRIS SKIN",
   appleWebApp: { capable: true, title: "KRIS SKIN", statusBarStyle: "default" },
   robots: { index: false, follow: false },
@@ -39,11 +42,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${manrope.variable} ${prata.variable} h-full antialiased`}>
+    <html lang="ru" suppressHydrationWarning className={`${manrope.variable} ${prata.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ANTI_FLASH }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="top-center" richColors />
         <Hydrated />
+        <PwaRegister />
       </body>
     </html>
   );
