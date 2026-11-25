@@ -9,6 +9,7 @@ import { MediaPicker } from "@/components/media-picker";
 import { PatientPhotoPicker } from "@/components/patient-photo-picker";
 import { PdfViewer } from "@/components/pdf-viewer";
 import { SaveBadge } from "@/components/save-badge";
+import { SmartVoiceProvider } from "@/components/smart-voice";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { SaveError } from "@/lib/autosave";
@@ -19,7 +20,7 @@ import { pdfFileName } from "@/lib/format";
 import { renderPdfBlob, snapshotFor, loadAssetsAsDataUrls } from "@/lib/pdf-client/generate";
 import { downloadBlob, sharePdf } from "@/lib/pdf-client/share";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
-import { PAGE_KEYS, PAGE_TITLES, type CardData, type PageKey } from "@/lib/schemas/card";
+import { PAGE_KEYS, PAGE_TITLES, productLine, type CardData, type PageKey } from "@/lib/schemas/card";
 import { cn } from "@/lib/utils";
 import {
   finalizeApprovalAction,
@@ -323,6 +324,19 @@ export function CardEditor({
     }
   })();
 
+  // Voice-first sections: everything from «Состояние кожи» to the review (ADR-019).
+  const smartVoice = section !== "cover" && section !== "personal";
+  const sectionBody = (
+    <SmartVoiceProvider enabled={smartVoice} terms={card.products.items.map(productLine).filter(Boolean)}>
+      {smartVoice && section !== "review" && (
+        <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground/80">
+          Нажмите микрофон в любом поле и говорите: текст сразу появится в поле, ошибки исправятся. Можно говорить «запятая», «двоеточие», «новая строка».
+        </p>
+      )}
+      {body}
+    </SmartVoiceProvider>
+  );
+
   const status = (
     <SaveBadge
       status={autosave.status}
@@ -422,7 +436,7 @@ export function CardEditor({
                 {pdfOpen ? <PanelRightClose /> : <PanelRightOpen />}
               </Button>
             </div>
-            <div className="mx-auto max-w-2xl space-y-4 p-4">{body}</div>
+            <div className="mx-auto max-w-2xl space-y-4 p-4">{sectionBody}</div>
           </div>
           {pdfOpen && (
             <>
@@ -487,7 +501,7 @@ export function CardEditor({
         {view === "edit" && (
           <div className="space-y-4">
             <h2 className="text-lg">{SECTIONS[idx].label}</h2>
-            {body}
+            {sectionBody}
           </div>
         )}
         {view === "pdf" && <PdfViewer blob={blob} busy={pdfBusy} error={pdfError} className="h-[calc(100dvh-14rem)] rounded-md border" />}

@@ -12,6 +12,7 @@
     "postinstall": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
     "@base-ui/react": "^1.9.0",
     "@expo-google-fonts/manrope": "^0.4.3",
     "@expo-google-fonts/prata": "^0.4.1",

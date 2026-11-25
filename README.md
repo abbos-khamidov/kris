@@ -31,6 +31,13 @@ node scripts/create-local-user.mjs <логин> <пароль>   # демо-по
 3. Deploy. Регион функций задан в `vercel.json` (`sin1`, рядом с базой — меняйте под регион вашего Supabase).
 4. Каждый `git push` в `main` автоматически обновляет сайт.
 
+### Голосовой ввод с исправлением ошибок (Claude)
+1. Получите ключ на console.anthropic.com (платный сервис: оплата за использование).
+2. Vercel → проект → Settings → Environment Variables → добавьте `ANTHROPIC_API_KEY` (Production), затем Deployments → Redeploy.
+3. Без ключа диктовка работает, но без исправления орфографии (только заглавные буквы и знаки препинания голосом).
+4. Модель: `claude-opus-5-5`; быстрее и дешевле — `ANTHROPIC_MODEL=claude-haiku-5-5`.
+Распознавание речи — в Chrome, Edge и Safari. Надиктованный текст отправляется в Anthropic.
+
 ### Свой домен
 Vercel → проект → Settings → Domains → Add. Добавьте записи DNS, которые покажет Vercel. Домены не покупаются автоматически.
 

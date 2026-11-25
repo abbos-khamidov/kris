@@ -233,13 +233,13 @@ export function CareSection({ card, patch, pickImage, faceUrl }: SectionProps) {
         {care.homeCare.map((h, i) => (
           <div key={h.id} className="space-y-2 rounded-md border p-3">
             <div className="flex gap-2">
-              <Input value={h.name} onChange={(e) => patch((c) => void (c.care.homeCare[i].name = e.target.value))} placeholder="Средство" aria-label="Название средства" className="h-11 flex-1 sm:h-8" />
+              <VoiceInput className="flex-1" multiline={false} value={h.name} onChange={(v) => patch((c) => void (c.care.homeCare[i].name = v))} placeholder="Средство" aria-label="Название средства" />
               <Button type="button" variant="ghost" size="icon" className="size-11 sm:size-8" aria-label="Удалить" onClick={() => patch((c) => void c.care.homeCare.splice(i, 1))}>
                 <Trash2 />
               </Button>
             </div>
             <Segmented label="Решение" value={h.decision} onChange={(v) => patch((c) => void (c.care.homeCare[i].decision = v))} options={HOME_CARE_DECISIONS.map((v) => ({ value: v, label: HOME_CARE_LABEL[v] }))} />
-            <Input value={h.note} onChange={(e) => patch((c) => void (c.care.homeCare[i].note = e.target.value))} placeholder="Комментарий" aria-label="Комментарий" className="h-11 sm:h-8" />
+            <VoiceInput multiline={false} value={h.note} onChange={(v) => patch((c) => void (c.care.homeCare[i].note = v))} placeholder="Комментарий" aria-label="Комментарий" />
           </div>
         ))}
         <Button type="button" variant="outline" className="h-11 sm:h-8" onClick={() => patch((c) => void c.care.homeCare.push({ id: uid(), name: "", decision: "keep", note: "" }))}>
@@ -346,13 +346,13 @@ export function ProductsSection({ card, patch }: SectionProps) {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Бренд" htmlFor={`pb-${it.id}`}>
-              <Input id={`pb-${it.id}`} value={it.brand} onChange={(e) => setItem(i, (x) => void (x.brand = e.target.value))} className="h-11 sm:h-8" />
+              <VoiceInput id={`pb-${it.id}`} multiline={false} value={it.brand} onChange={(v) => setItem(i, (x) => void (x.brand = v))} />
             </Field>
             <Field label="Название" htmlFor={`pn-${it.id}`}>
-              <Input id={`pn-${it.id}`} value={it.name} onChange={(e) => setItem(i, (x) => void (x.name = e.target.value))} className="h-11 sm:h-8" />
+              <VoiceInput id={`pn-${it.id}`} multiline={false} value={it.name} onChange={(v) => setItem(i, (x) => void (x.name = v))} />
             </Field>
             <Field label="Заголовок группы (например «очищение:»)" htmlFor={`pl-${it.id}`}>
-              <Input id={`pl-${it.id}`} value={it.label} onChange={(e) => setItem(i, (x) => void (x.label = e.target.value))} className="h-11 sm:h-8" />
+              <VoiceInput id={`pl-${it.id}`} multiline={false} value={it.label} onChange={(v) => setItem(i, (x) => void (x.label = v))} />
             </Field>
             <Field label="Ссылка на покупку" htmlFor={`pu-${it.id}`}>
               <Input id={`pu-${it.id}`} type="url" inputMode="url" value={it.url} onChange={(e) => setItem(i, (x) => void (x.url = e.target.value))} placeholder="https://" className="h-11 sm:h-8" />
@@ -455,16 +455,16 @@ export function ProceduresSection({ card, patch }: SectionProps) {
                 </Field>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Количество сеансов" htmlFor={`prs-${it.id}`}>
-                    <Input id={`prs-${it.id}`} value={it.sessions} onChange={(e) => set((x) => void (x.sessions = e.target.value))} placeholder="3–5 процедур" className="h-11 sm:h-8" />
+                    <VoiceInput id={`prs-${it.id}`} multiline={false} value={it.sessions} onChange={(v) => set((x) => void (x.sessions = v))} placeholder="3–5 процедур" />
                   </Field>
                   <Field label="Периодичность" htmlFor={`prf-${it.id}`}>
-                    <Input id={`prf-${it.id}`} value={it.frequency} onChange={(e) => set((x) => void (x.frequency = e.target.value))} placeholder="1 раз в 4 недели" className="h-11 sm:h-8" />
+                    <VoiceInput id={`prf-${it.id}`} multiline={false} value={it.frequency} onChange={(v) => set((x) => void (x.frequency = v))} placeholder="1 раз в 4 недели" />
                   </Field>
                   <Field label="Дозировка" htmlFor={`prz-${it.id}`}>
-                    <Input id={`prz-${it.id}`} value={it.dosage} onChange={(e) => set((x) => void (x.dosage = e.target.value))} placeholder="50 ед" className="h-11 sm:h-8" />
+                    <VoiceInput id={`prz-${it.id}`} multiline={false} value={it.dosage} onChange={(v) => set((x) => void (x.dosage = v))} placeholder="50 ед" />
                   </Field>
                   <Field label="Объём" htmlFor={`prv-${it.id}`}>
-                    <Input id={`prv-${it.id}`} value={it.volume} onChange={(e) => set((x) => void (x.volume = e.target.value))} placeholder="3 мл" className="h-11 sm:h-8" />
+                    <VoiceInput id={`prv-${it.id}`} multiline={false} value={it.volume} onChange={(v) => set((x) => void (x.volume = v))} placeholder="3 мл" />
                   </Field>
                 </div>
                 <label className="flex min-h-11 items-center gap-2 text-sm sm:min-h-8">
