@@ -5,11 +5,15 @@ import { createSaver, type SaveStatus, type Saver } from "@/lib/autosave";
 /** React binding for the autosave engine: online/offline events + unsaved-changes warning. */
 export function useAutosave<T>(save: (value: T) => Promise<void>, debounceMs = 800) {
   const [state, setState] = useState<{ status: SaveStatus; message?: string }>({ status: "idle" });
+  // "Latest ref" pattern: the engine always calls the newest `save`, and only from timers/handlers.
   const saveRef = useRef(save);
-  saveRef.current = save;
+  useEffect(() => {
+    saveRef.current = save;
+  });
 
   const saver: Saver<T> = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs -- the closure is invoked later by the saver's timers, never during render
       createSaver<T>({
         save: (v) => saveRef.current(v),
         onStatus: (status, message) => setState({ status, message }),

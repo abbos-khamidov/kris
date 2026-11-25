@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction, setupAction, type AuthState } from "./actions";
 
-export function LoginForm({ mode, supabase }: { mode: "login" | "setup"; supabase: boolean }) {
+export function LoginForm({ mode }: { mode: "login" | "setup" }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(
     mode === "setup" ? setupAction : loginAction,
     {},

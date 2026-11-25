@@ -182,7 +182,6 @@ export function parseCard(pages: PageItems[]): ParsedCard {
     }
     if (kind === "cover") return; // contains only the title and the patient name
     const lines = toLines(page.items);
-    const titleSize = Math.max(26, ...lines.filter((l) => l.size >= 26).map((l) => l.size - 1));
     if (kind === "personal") {
       result.patient.lines = lines.filter((l) => l.size < 26).map((l) => l.text);
       const fio = result.patient.lines.find((t) => /^ФИО\s*:/i.test(t));

@@ -37,6 +37,9 @@ Background `#F5F1ED`, Surface `#FFFFFF`, Primary `#791F2B`, Accent `#B99B86`, Te
 ## PDF-референсы
 Формат страницы 595×822 pt. 10 страниц: обложка, личные данные, состояние кожи, схема ухода, активы, питание, витамины и анализы, рекомендованные средства, план процедур, заключение. Три варианта обложки. Подробности композиций — в `DECISIONS.md` (ADR-006). Количество референсов в `references/` растёт — анализировать **все** PDF (`node scripts/render-pdf.mjs`).
 
+## Развёртывание
+Боевой сайт: https://kris-skin.vercel.app (автодеплой из `main`). Supabase: проект `kris-skin`. Только публичный ключ. Инструкции — `README.md`.
+
 ## Команды
-`npm run dev` · `npm run lint` · `npm run typecheck` · `npm run build` · `npm test` (vitest)
+`npm run dev` · `npm run lint` · `npm run typecheck` · `npm run build` · `npm test` (vitest) · `npx playwright test` (e2e, локальный режим) · `npx playwright test -c playwright.supabase.config.ts` (против Supabase)
 Рендер референса: `node scripts/render-pdf.mjs references/card-01.pdf <outDir> 0.7` (вывод — вне репозитория).

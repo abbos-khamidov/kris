@@ -50,12 +50,12 @@ export default async function Dashboard() {
     <div className="animate-fade-in space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl">Дашборд</h1>
-        <Button render={<Link href="/patients/new" />} className="h-11 sm:h-8">
+        <Button nativeButton={false} render={<Link href="/patients/new" />} className="h-11 sm:h-8">
           <Plus /> Новый пациент
         </Button>
       </div>
 
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border lg:grid-cols-4">
+      <dl className="stagger grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border lg:grid-cols-4">
         {stats.map((s) => {
           const inner = (
             <div className="h-full bg-surface p-4">

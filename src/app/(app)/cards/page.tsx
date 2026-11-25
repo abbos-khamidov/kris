@@ -35,7 +35,7 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
           {filter === "archive" ? "Архив пуст." : "Карт пока нет. Откройте пациента и создайте карту во вкладке «Карты пациента»."}
         </div>
       ) : (
-        <ul className="divide-y rounded-md border bg-surface">
+        <ul className="stagger divide-y rounded-md border bg-surface">
           {cards.map((c) => (
             <li key={c.id} className="flex items-center gap-2 pr-2">
               <Link href={`/cards/${c.id}`} className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-3.5 hover:bg-secondary/60">

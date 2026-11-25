@@ -28,7 +28,7 @@ export default async function PatientsPage({
     <div className="animate-fade-in space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl">Пациенты</h1>
-        <Button render={<Link href="/patients/new" />} className="h-11 sm:h-8">
+        <Button nativeButton={false} render={<Link href="/patients/new" />} className="h-11 sm:h-8">
           <Plus /> Новый пациент
         </Button>
       </div>
@@ -58,7 +58,7 @@ export default async function PatientsPage({
           {q ? "Ничего не найдено." : showArchived ? "Архив пуст." : "Пока нет пациентов. Создайте первого."}
         </div>
       ) : (
-        <ul className="divide-y rounded-md border bg-surface">
+        <ul className="stagger divide-y rounded-md border bg-surface">
           {rows.map((p) => {
             const age = ageFromBirthDate(p.birth_date);
             const count = cards.filter((c) => c.patient_id === p.id).length;

@@ -12,7 +12,18 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    ".next-*/**",
+    "assets-private/**",
+    "test-results/**",
+    "public/pdf.worker.min.mjs",
   ]),
+  {
+    rules: {
+      // Our effects load data from the server and reset local loading state at their start. React's own docs
+      // accept this; the rule is advice on render cost, not a correctness check (ADR-015).
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

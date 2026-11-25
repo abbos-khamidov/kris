@@ -17,7 +17,7 @@ export default async function LoginPage() {
             {needsSetup ? "Первичная настройка: создайте учётную запись косметолога" : "Рабочее пространство косметолога"}
           </p>
         </div>
-        <LoginForm mode={needsSetup ? "setup" : "login"} supabase={supabase} />
+        <LoginForm mode={needsSetup ? "setup" : "login"} />
         {!supabase && (
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Демо-режим: данные хранятся локально. Для боевого режима подключите Supabase (см. README).

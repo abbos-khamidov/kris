@@ -23,7 +23,7 @@ const report = [];
 
 for (let p = 1; p <= doc.numPages; p++) {
   const page = await doc.getPage(p);
-  const [, , pw, ph] = page.view;
+  const [, , , ph] = page.view;
   const ops = await page.getOperatorList();
   let ctm = [1, 0, 0, 1, 0, 0];
   const stack = [];

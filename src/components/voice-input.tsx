@@ -49,7 +49,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
   const [transcript, setTranscript] = useState("");
   const [consentOpen, setConsentOpen] = useState(false);
   const [undo, setUndo] = useState<string | null>(null);
-  const sel = useRef({ start: 0, end: 0 });
+  const [selRange, setSelRange] = useState({ start: 0, end: 0 });
   // Detected after mount: server and first client render must match (hydration).
   const [supported, setSupported] = useState(false);
   useEffect(() => setSupported(getSpeechProvider() !== null), []);
@@ -70,7 +70,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
       return;
     }
     const el = fieldRef.current;
-    sel.current = { start: el?.selectionStart ?? value.length, end: el?.selectionEnd ?? value.length };
+    setSelRange({ start: el?.selectionStart ?? value.length, end: el?.selectionEnd ?? value.length });
     setTranscript("");
     setInterim("");
     setPhase("recording");
@@ -104,7 +104,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
   };
 
   const apply = (mode: InsertMode) => {
-    const res = insertDictation(value, transcript, mode, sel.current.start, sel.current.end, multiline);
+    const res = insertDictation(value, transcript, mode, selRange.start, selRange.end, multiline);
     if (res.value === value) {
       setPhase("idle");
       return;
@@ -136,7 +136,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
     });
   };
 
-  const selected = value.slice(sel.current.start, sel.current.end);
+  const selected = value.slice(selRange.start, selRange.end);
   const Field = multiline ? Textarea : Input;
 
   return (
