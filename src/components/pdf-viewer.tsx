@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Maximize2, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,14 +22,17 @@ export function PdfViewer({
 }) {
   const host = useRef<HTMLDivElement>(null);
   const canvases = useRef<HTMLCanvasElement[]>([]);
-  const [pages, setPages] = useState(0);
+  // The document itself is state: an edited card often has the same page count and must still redraw.
+  const [doc, setDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [zoom, setZoom] = useState(1);
   const [current, setCurrent] = useState(1);
   const [width, setWidth] = useState(0);
   const [rendering, setRendering] = useState(false);
-  const docRef = useRef<import("pdfjs-dist").PDFDocumentProxy | null>(null);
+  const [failed, setFailed] = useState(false);
   const taskRef = useRef<import("pdfjs-dist").PDFDocumentLoadingTask | null>(null);
-  const token = useRef(0);
+  const pages = doc?.numPages ?? 0;
+
+  useEffect(() => () => void taskRef.current?.destroy(), []);
 
   useEffect(() => {
     const el = host.current;
@@ -40,7 +43,7 @@ export function PdfViewer({
     return () => ro.disconnect();
   }, []);
 
-  // Load the document whenever a new blob arrives.
+  // Load the document whenever a new blob arrives. The previous one stays on screen until then.
   useEffect(() => {
     if (!blob) return;
     let alive = true;
@@ -49,45 +52,63 @@ export function PdfViewer({
       pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
       const data = new Uint8Array(await blob.arrayBuffer());
       const task = pdfjs.getDocument({ data });
-      const doc = await task.promise;
+      const next = await task.promise;
       if (!alive) return void task.destroy();
-      const prev = taskRef.current;
+      const previous = taskRef.current;
       taskRef.current = task;
-      docRef.current = doc;
-      setPages(doc.numPages);
-      void prev?.destroy();
-    })().catch(() => undefined);
+      setFailed(false);
+      setDoc(next);
+      void previous?.destroy();
+    })().catch(() => {
+      if (alive) setFailed(true);
+    });
     return () => {
       alive = false;
     };
   }, [blob]);
 
-  const draw = useCallback(async () => {
-    const doc = docRef.current;
-    if (!doc || width < 100) return;
-    const mine = ++token.current;
-    setRendering(true);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    for (let n = 1; n <= doc.numPages; n++) {
-      const canvas = canvases.current[n - 1];
-      if (!canvas) continue;
-      const page = await doc.getPage(n);
-      if (mine !== token.current) return;
-      const base = page.getViewport({ scale: 1 });
-      const scale = ((width - 16) * zoom) / base.width;
-      const vp = page.getViewport({ scale: scale * dpr });
-      canvas.width = Math.floor(vp.width);
-      canvas.height = Math.floor(vp.height);
-      canvas.style.width = `${Math.floor(vp.width / dpr)}px`;
-      canvas.style.height = `${Math.floor(vp.height / dpr)}px`;
-      await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
-    }
-    if (mine === token.current) setRendering(false);
-  }, [width, zoom]);
-
+  // Each page is painted on a fresh off-screen canvas and then copied: a newer run (zoom, resize, new
+  // document) never shares a canvas with an unfinished one, and the old picture does not flicker away.
   useEffect(() => {
-    void draw();
-  }, [draw, pages]);
+    if (!doc || width < 100) return;
+    let cancelled = false;
+    let task: import("pdfjs-dist").RenderTask | null = null;
+    setRendering(true);
+    (async () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      for (let n = 1; n <= doc.numPages && !cancelled; n++) {
+        const page = await doc.getPage(n);
+        const target = canvases.current[n - 1];
+        if (cancelled || !target) continue;
+        const scale = ((width - 16) * zoom) / page.getViewport({ scale: 1 }).width;
+        const viewport = page.getViewport({ scale: scale * dpr });
+        const buffer = document.createElement("canvas");
+        buffer.width = Math.floor(viewport.width);
+        buffer.height = Math.floor(viewport.height);
+        task = page.render({ canvas: buffer, canvasContext: buffer.getContext("2d")!, viewport });
+        await task.promise;
+        if (cancelled) return;
+        target.width = buffer.width;
+        target.height = buffer.height;
+        target.style.width = `${Math.floor(viewport.width / dpr)}px`;
+        target.style.height = `${Math.floor(viewport.height / dpr)}px`;
+        target.getContext("2d")!.drawImage(buffer, 0, 0);
+        target.dataset.rendered = "true";
+        // iOS keeps canvas memory until the size is released.
+        buffer.width = buffer.height = 0;
+      }
+    })()
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      })
+      .finally(() => {
+        if (!cancelled) setRendering(false);
+      });
+    return () => {
+      cancelled = true;
+      task?.cancel();
+    };
+  }, [doc, width, zoom]);
 
   // Track the visible page.
   const onScroll = () => {
@@ -144,9 +165,10 @@ export function PdfViewer({
           }
         }}
         className="min-h-0 flex-1 overflow-auto p-2"
-        style={{ touchAction: "pan-x pan-y pinch-zoom" }}
+        style={{ touchAction: "pan-x pan-y pinch-zoom", scrollbarGutter: "stable" }}
       >
         {error && <p className="p-4 text-center text-sm text-red-700">{error}</p>}
+        {failed && !error && <p className="p-4 text-center text-sm text-red-700">Не удалось показать предпросмотр. Измените масштаб или обновите страницу — скачивание PDF работает.</p>}
         {!blob && !error && (
           <div className="grid h-full min-h-64 place-items-center text-sm text-neutral-600">
             <span className="flex items-center gap-2">
