@@ -33,12 +33,14 @@ export function snapshotFor(ctx: DocContext, card: CardData): Promise<CardSnapsh
  * snapshot, so the file the patient receives is exactly what the specialist previewed.
  */
 export async function renderPdfBlob(snapshot: CardSnapshot): Promise<Blob> {
-  const [{ pdf }, { CardDocument }, { registerPdfFonts }, React] = await Promise.all([
+  const [{ pdf }, { CardDocument }, { computeFit }, { registerPdfFonts }, React] = await Promise.all([
     import("@react-pdf/renderer"),
     import("@/pdf/CardDocument"),
+    import("@/pdf/fit"),
     import("@/pdf/fonts"),
     import("react"),
   ]);
   registerPdfFonts("/fonts");
-  return pdf(React.createElement(CardDocument, { snapshot }) as never).toBlob();
+  const fit = await computeFit(snapshot, async (doc) => (await pdf(doc as never).toBlob()).text());
+  return pdf(React.createElement(CardDocument, { snapshot, fit }) as never).toBlob();
 }

@@ -6,6 +6,7 @@ import path from "node:path";
 import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { CardDocument } from "../src/pdf/CardDocument";
+import { computeFit } from "../src/pdf/fit";
 import { registerPdfFonts } from "../src/pdf/fonts";
 import { sampleSnapshot, type SampleKind } from "../src/pdf/sample";
 import { BRAND_SLOTS } from "../src/pdf/tokens";
@@ -25,7 +26,8 @@ const kinds: SampleKind[] = ["short-frame", "long-burgundy-bottom", "mixed-burgu
 for (const kind of kinds) {
   const snap = { ...sampleSnapshot(kind), brand };
   const t = Date.now();
-  const buf = await renderToBuffer(<CardDocument snapshot={snap} />);
+  const fit = await computeFit(snap, async (doc) => (await renderToBuffer(doc as never)).toString("latin1"));
+  const buf = await renderToBuffer(<CardDocument snapshot={snap} fit={fit} />);
   fs.writeFileSync(path.join(outDir, `sample-${kind}.pdf`), buf);
   console.log(kind, `${Math.round(buf.length / 1024)} KB`, `${Date.now() - t} ms`);
 }

@@ -48,6 +48,15 @@ export const GEO = {
   rowGap: 10,
 } as const;
 
+/** Auto-fit steps for long text (src/pdf/fit.tsx), from full size down to the smallest. */
+export const FIT_STEPS = [1, 0.93, 0.86, 0.8, 0.74, 0.68] as const;
+/** Smallest type auto-fit may produce, in points (text that is already smaller keeps its size). */
+export const MIN_TYPE = 9;
+export const fitSize = (size: number, k = 1) => Math.max(Math.min(size, MIN_TYPE), Math.round(size * k * 10) / 10);
+
+/** A block taller than a page must be allowed to break, otherwise its end would be cut off. */
+export const keepTogether = (...texts: string[]) => texts.join("").length < 600;
+
 export const BRAND_SLOTS = [
   "cover",
   "bg_products",

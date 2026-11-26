@@ -2,7 +2,7 @@ import React from "react";
 import { Link, Page, Svg, Line, Circle, Text, View } from "@react-pdf/renderer";
 import { HOME_CARE_LABEL, productLine, type ProductItem } from "@/lib/schemas/card";
 import { formatPrice } from "@/lib/format";
-import { COLOR, FONT, GEO, PAGE, SIZE } from "./tokens";
+import { COLOR, FONT, GEO, PAGE, SIZE, fitSize as f, keepTogether } from "./tokens";
 import {
   Blocks,
   Box,
@@ -22,7 +22,9 @@ import type { CardSnapshot, ImageSrc } from "./snapshot";
 
 const SIDE = (s: CardSnapshot, color: string) => (s.card.design.showSideText && s.sideText ? { text: s.sideText, color } : undefined);
 const FULL: Box = { left: GEO.marginX, top: GEO.cardTop, bottom: GEO.cardBottom, width: PAGE.w - GEO.marginX * 2 };
-const bodyText = { fontFamily: FONT.sans, fontSize: SIZE.body, lineHeight: 1.42, color: COLOR.text } as const;
+const bodyAt = (k = 1) => ({ fontFamily: FONT.sans, fontSize: f(SIZE.body, k), lineHeight: 1.42, color: COLOR.text }) as const;
+/** `k` is the auto-fit factor of a section (1 = reference size). */
+type PageProps = { s: CardSnapshot; k?: number };
 
 const imgOf = (s: CardSnapshot, key: string): ImageSrc | undefined => {
   const over = s.card.design.imageOverrides[key];
@@ -108,16 +110,17 @@ export function CoverPage({ s }: { s: CardSnapshot }) {
 
 /* ================================================================ 2. personal */
 
-function Row({ label, children }: { label: string; children?: React.ReactNode }) {
+function Row({ label, children, k = 1 }: { label: string; children?: React.ReactNode; k?: number }) {
   return (
-    <View wrap={false} style={{ flexDirection: "row", alignItems: "center", minHeight: 40, borderBottomWidth: 0.6, borderBottomColor: COLOR.line, marginBottom: 5 }}>
-      <Text style={{ ...bodyText, marginRight: 6 }}>{label}</Text>
+    <View wrap={!keepTogether(label)} style={{ flexDirection: "row", alignItems: "center", minHeight: 40 * k, borderBottomWidth: 0.6, borderBottomColor: COLOR.line, marginBottom: 5 * k }}>
+      <Text style={{ ...bodyAt(k), marginRight: 6, ...(children ? {} : { flex: 1, paddingVertical: 3 * k }) }}>{label}</Text>
       {children}
     </View>
   );
 }
 
-function RadioPair({ a, b, on }: { a: string; b: string; on: "a" | "b" | null }) {
+function RadioPair({ a, b, on, k = 1 }: { a: string; b: string; on: "a" | "b" | null; k?: number }) {
+  const bodyText = bodyAt(k);
   return (
     <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
       <View style={{ flexDirection: "row", alignItems: "center", width: 150 }}>
@@ -180,55 +183,56 @@ function SebumScale({ value }: { value: number | null }) {
 
 const CYCLE_TEXT: Record<string, string> = { regular: "регулярный", irregular: "нерегулярный", unknown: "неизвестно", unspecified: "" };
 
-export function PersonalPage({ s }: { s: CardSnapshot }) {
+export function PersonalPage({ s, k = 1 }: PageProps) {
+  const bodyText = bodyAt(k);
   const p = s.card.personal;
   const name = p.fullName.trim() || s.patient.fullName;
   const sebumText = p.sebumText.trim() || (p.sebum !== null ? String(p.sebum).replace(".", ",") : "");
   const radio = (state: string): "a" | "b" | null => (state === "yes" ? "a" : state === "no" ? "b" : null);
   return (
     <StdPage title="ЛИЧНЫЕ ДАННЫЕ" titleColor={COLOR.burgundy} bg="milk" box={FULL} side={SIDE(s, COLOR.burgundy)}>
-      <Row label="ФИО:">
+      <Row k={k} label="ФИО:">
         <Text style={{ fontFamily: FONT.serif, fontSize: name.length > 34 ? 17 : name.length > 24 ? 20 : 24, color: COLOR.burgundy, flex: 1 }}>{name}</Text>
       </Row>
-      <Row label={`Возраст: ${p.ageText}`} />
-      <Row label={`Аллергии: ${triText(p.allergiesState, p.allergies)}`} />
-      <Row label={`Хронические заболевания: ${triText(p.chronicState, p.chronic, "есть")}`} />
-      <Row label={`Состояние щитовидной железы: ${triText(p.thyroidState, p.thyroid)}`} />
-      <Row label="Анализы на гормоны:">
+      <Row k={k} label={`Возраст: ${p.ageText}`} />
+      <Row k={k} label={`Аллергии: ${triText(p.allergiesState, p.allergies)}`} />
+      <Row k={k} label={`Хронические заболевания: ${triText(p.chronicState, p.chronic, "есть")}`} />
+      <Row k={k} label={`Состояние щитовидной железы: ${triText(p.thyroidState, p.thyroid)}`} />
+      <Row k={k} label="Анализы на гормоны:">
         {p.hormoneTests === "yes" || p.hormoneTests === "no" ? (
-          <RadioPair a="Да" b="Нет" on={radio(p.hormoneTests)} />
+          <RadioPair k={k} a="Да" b="Нет" on={radio(p.hormoneTests)} />
         ) : (
           <Text style={bodyText}>{p.hormoneTests === "unknown" ? "неизвестно" : ""}</Text>
         )}
-        {p.hormoneTestsNote ? <Text style={{ ...bodyText, fontSize: 11, color: COLOR.textSoft }}> {p.hormoneTestsNote}</Text> : null}
+        {p.hormoneTestsNote ? <Text style={{ ...bodyText, flex: 1, fontSize: f(11, k), color: COLOR.textSoft }}> {p.hormoneTestsNote}</Text> : null}
       </Row>
-      <Row label="Цикл:">
+      <Row k={k} label="Цикл:">
         {p.cycle === "regular" || p.cycle === "irregular" ? (
-          <RadioPair a="Регулярный" b="Нерегулярный" on={p.cycle === "regular" ? "a" : "b"} />
+          <RadioPair k={k} a="Регулярный" b="Нерегулярный" on={p.cycle === "regular" ? "a" : "b"} />
         ) : (
           <Text style={bodyText}>{CYCLE_TEXT[p.cycle]}</Text>
         )}
       </Row>
-      <Row label="Беременность:">
+      <Row k={k} label="Беременность:">
         {p.pregnancy === "yes" || p.pregnancy === "no" ? (
-          <RadioPair a="Да" b="Нет" on={radio(p.pregnancy)} />
+          <RadioPair k={k} a="Да" b="Нет" on={radio(p.pregnancy)} />
         ) : (
           <Text style={bodyText}>{p.pregnancy === "planning" ? "планирование" : p.pregnancy === "unknown" ? "неизвестно" : ""}</Text>
         )}
       </Row>
-      <Row label="Лактация:">
+      <Row k={k} label="Лактация:">
         {p.lactation === "yes" || p.lactation === "no" ? (
-          <RadioPair a="Да" b="Нет" on={radio(p.lactation)} />
+          <RadioPair k={k} a="Да" b="Нет" on={radio(p.lactation)} />
         ) : (
           <Text style={bodyText}>{p.lactation === "unknown" ? "неизвестно" : ""}</Text>
         )}
       </Row>
       {p.custom
-        .filter((f) => f.label.trim() || f.value.trim())
-        .map((f) => (
-          <Row key={f.id} label={`${f.label}: ${f.value}`} />
+        .filter((x) => x.label.trim() || x.value.trim())
+        .map((x) => (
+          <Row k={k} key={x.id} label={`${x.label}: ${x.value}`} />
         ))}
-      <Row label={`Тип себосекреции: ${sebumText}`} />
+      <Row k={k} label={`Тип себосекреции: ${sebumText}`} />
       <SebumScale value={p.sebum} />
     </StdPage>
   );
@@ -236,11 +240,11 @@ export function PersonalPage({ s }: { s: CardSnapshot }) {
 
 /* ================================================================ 3. skin */
 
-export function SkinPage({ s }: { s: CardSnapshot }) {
+export function SkinPage({ s, k = 1 }: PageProps) {
   const photos = s.card.skin.photoIds.map((id) => s.images[id]).filter(Boolean);
   return (
     <StdPage title="СОСТОЯНИЕ КОЖИ" titleColor={COLOR.white} bg="products" bgSrc={imgOf(s, "bg_products")} box={FULL}>
-      <Blocks blocks={s.card.skin.blocks} size={SIZE.body} images={s.images} />
+      <Blocks blocks={s.card.skin.blocks} size={f(SIZE.body, k)} images={s.images} />
       {photos.length > 0 && (
         <View wrap={false} style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
           {photos.map((p, i) => (
@@ -256,39 +260,42 @@ export function SkinPage({ s }: { s: CardSnapshot }) {
 
 const FACE = 188;
 
-export function CarePage({ s }: { s: CardSnapshot }) {
+export function CarePage({ s, k = 1 }: PageProps) {
+  const bodyText = bodyAt(k);
+  const size = f(SIZE.body, k);
+  const face = Math.round(FACE * Math.max(0.8, k));
   const c = s.card.care;
-  const colW = PAGE.w - GEO.marginX * 2 - GEO.cardPadX * 2 - FACE - 16;
-  const split = splitForFloat(c.morning, colW, FACE + 20);
+  const colW = PAGE.w - GEO.marginX * 2 - GEO.cardPadX * 2 - face - 16;
+  const split = splitForFloat(c.morning, colW, face + 20, size);
   const home = c.homeCare.filter((h) => h.name.trim());
   return (
     <StdPage title="СХЕМА УХОДА" titleColor={COLOR.white} bg="room" bgSrc={imgOf(s, "bg_room")} box={FULL}>
-      <Text style={{ fontFamily: FONT.serif, fontSize: 24, marginBottom: 8 }}>{c.morningTitle}</Text>
+      <Text style={{ fontFamily: FONT.serif, fontSize: f(24, k), marginBottom: 8 }}>{c.morningTitle}</Text>
       <View style={{ flexDirection: "row" }}>
         <View style={{ flex: 1, paddingRight: 16 }}>
-          <Blocks blocks={split.beside} images={s.images} />
+          <Blocks blocks={split.beside} size={size} images={s.images} />
         </View>
-        <View style={{ width: FACE }}>
-          <FaceDiagram src={imgOf(s, "face_illustration")} strokes={c.face.strokes} size={FACE} />
+        <View style={{ width: face }}>
+          <FaceDiagram src={imgOf(s, "face_illustration")} strokes={c.face.strokes} size={face} />
           <Legend />
         </View>
       </View>
-      <Blocks blocks={split.below} images={s.images} />
-      <Text minPresenceAhead={60} style={{ fontFamily: FONT.serif, fontSize: 24, marginTop: 10, marginBottom: 8 }}>
+      <Blocks blocks={split.below} size={size} images={s.images} />
+      <Text minPresenceAhead={60} style={{ fontFamily: FONT.serif, fontSize: f(24, k), marginTop: 10 * k, marginBottom: 8 * k }}>
         {c.eveningTitle}
       </Text>
-      <Blocks blocks={c.evening} images={s.images} />
-      <Blocks blocks={c.notes} images={s.images} />
+      <Blocks blocks={c.evening} size={size} images={s.images} />
+      <Blocks blocks={c.notes} size={size} images={s.images} />
       {home.length > 0 && (
         <View style={{ marginTop: 8 }}>
-          <Text minPresenceAhead={60} style={{ fontFamily: FONT.serif, fontSize: 18, marginBottom: 6 }}>
+          <Text minPresenceAhead={60} style={{ fontFamily: FONT.serif, fontSize: f(18, k), marginBottom: 6 }}>
             Текущий домашний уход
           </Text>
           {home.map((h) => (
-            <View key={h.id} wrap={false} style={{ flexDirection: "row", borderBottomWidth: 0.6, borderBottomColor: COLOR.line, paddingVertical: 4 }}>
+            <View key={h.id} wrap={!keepTogether(h.name, h.note)} style={{ flexDirection: "row", borderBottomWidth: 0.6, borderBottomColor: COLOR.line, paddingVertical: 4 * k }}>
               <Text style={{ ...bodyText, flex: 1 }}>{h.name}</Text>
               <Text style={{ ...bodyText, width: 110, color: COLOR.burgundy, fontWeight: 600 }}>{HOME_CARE_LABEL[h.decision]}</Text>
-              {h.note ? <Text style={{ ...bodyText, flex: 1, fontSize: 12, color: COLOR.textSoft }}>{h.note}</Text> : null}
+              {h.note ? <Text style={{ ...bodyText, flex: 1, fontSize: f(12, k), color: COLOR.textSoft }}>{h.note}</Text> : null}
             </View>
           ))}
         </View>
@@ -312,7 +319,8 @@ function SidePhoto({ src, top, height, left = 300, label }: { src?: ImageSrc; to
   );
 }
 
-export function ActivesPage({ s }: { s: CardSnapshot }) {
+export function ActivesPage({ s, k = 1 }: PageProps) {
+  const size = f(SIZE.body, k);
   const a = s.card.actives;
   const label = s.card.design.showSideText ? s.sideText : "";
   return (
@@ -328,20 +336,21 @@ export function ActivesPage({ s }: { s: CardSnapshot }) {
         </>
       }
     >
-      <Blocks blocks={a.blocks} images={s.images} />
+      <Blocks blocks={a.blocks} size={size} images={s.images} />
       {a.note.length > 0 && (
         <>
-          <Text minPresenceAhead={50} style={{ fontFamily: FONT.serif, fontSize: 18, marginTop: 6, marginBottom: 6 }}>
+          <Text minPresenceAhead={50} style={{ fontFamily: FONT.serif, fontSize: f(18, k), marginTop: 6, marginBottom: 6 }}>
             {a.noteTitle}
           </Text>
-          <Blocks blocks={a.note} images={s.images} />
+          <Blocks blocks={a.note} size={size} images={s.images} />
         </>
       )}
     </StdPage>
   );
 }
 
-export function NutritionPage({ s }: { s: CardSnapshot }) {
+export function NutritionPage({ s, k = 1 }: PageProps) {
+  const size = f(SIZE.body, k);
   const n = s.card.nutrition;
   const label = s.card.design.showSideText ? s.sideText : "";
   return (
@@ -352,21 +361,22 @@ export function NutritionPage({ s }: { s: CardSnapshot }) {
       box={SIDE_BOX}
       behind={<SidePhoto src={imgOf(s, "side_nutrition")} top={93} height={700} label={label} />}
     >
-      <Text style={{ fontFamily: FONT.serif, fontSize: 18, marginBottom: 8 }}>{n.mainTitle}</Text>
-      <Blocks blocks={n.main} images={s.images} />
+      <Text style={{ fontFamily: FONT.serif, fontSize: f(18, k), marginBottom: 8 * k }}>{n.mainTitle}</Text>
+      <Blocks blocks={n.main} size={size} images={s.images} />
       {n.extra.length > 0 && (
         <>
-          <Text minPresenceAhead={50} style={{ fontFamily: FONT.serif, fontSize: 18, marginTop: 6, marginBottom: 8 }}>
+          <Text minPresenceAhead={50} style={{ fontFamily: FONT.serif, fontSize: f(18, k), marginTop: 6 * k, marginBottom: 8 * k }}>
             {n.extraTitle}
           </Text>
-          <Blocks blocks={n.extra} images={s.images} />
+          <Blocks blocks={n.extra} size={size} images={s.images} />
         </>
       )}
     </StdPage>
   );
 }
 
-export function VitaminsPage({ s }: { s: CardSnapshot }) {
+export function VitaminsPage({ s, k = 1 }: PageProps) {
+  const size = f(SIZE.body, k);
   const v = s.card.vitamins;
   const label = s.card.design.showSideText ? s.sideText : "";
   return (
@@ -377,14 +387,14 @@ export function VitaminsPage({ s }: { s: CardSnapshot }) {
       box={SIDE_BOX}
       behind={<SidePhoto src={imgOf(s, "side_vitamins")} top={93} height={700} label={label} />}
     >
-      <Text style={{ fontFamily: FONT.serif, fontSize: 18, marginBottom: 8 }}>{v.supplementsTitle}</Text>
-      <Blocks blocks={v.supplements} images={s.images} />
+      <Text style={{ fontFamily: FONT.serif, fontSize: f(18, k), marginBottom: 8 * k }}>{v.supplementsTitle}</Text>
+      <Blocks blocks={v.supplements} size={size} images={s.images} />
       {v.tests.length > 0 && (
         <>
-          <Text minPresenceAhead={50} style={{ fontFamily: FONT.serif, fontSize: 18, marginTop: 8, marginBottom: 8 }}>
+          <Text minPresenceAhead={50} style={{ fontFamily: FONT.serif, fontSize: f(18, k), marginTop: 8 * k, marginBottom: 8 * k }}>
             {v.testsTitle}
           </Text>
-          <Blocks blocks={v.tests} images={s.images} />
+          <Blocks blocks={v.tests} size={size} images={s.images} />
         </>
       )}
     </StdPage>
@@ -393,14 +403,14 @@ export function VitaminsPage({ s }: { s: CardSnapshot }) {
 
 /* ================================================================ 8. products */
 
-function PriceCell({ item }: { item: ProductItem }) {
+function PriceCell({ item, k }: { item: ProductItem; k: number }) {
   const lines = item.variants
     .map((v) => ({ vol: v.volume.trim(), price: formatPrice(v.price) }))
     .filter((v) => v.price || v.vol);
   return (
     <View style={{ minWidth: 92, maxWidth: 170, marginLeft: 10, alignItems: "flex-end" }}>
       {lines.map((l, i) => (
-        <Text key={i} style={{ fontFamily: FONT.sans, fontSize: lines.length > 1 ? 13 : 16, color: COLOR.burgundy, textAlign: "right", lineHeight: 1.3 }}>
+        <Text key={i} style={{ fontFamily: FONT.sans, fontSize: f(lines.length > 1 ? 13 : 16, k), color: COLOR.burgundy, textAlign: "right", lineHeight: 1.3 }}>
           {l.vol && lines.length > 1 ? `${l.vol} — ` : ""}
           {l.price}
         </Text>
@@ -409,7 +419,7 @@ function PriceCell({ item }: { item: ProductItem }) {
   );
 }
 
-export function ProductsPage({ s }: { s: CardSnapshot }) {
+export function ProductsPage({ s, k = 1 }: PageProps) {
   const items = s.card.products.items;
   return (
     <StdPage title="РЕКОМЕНДОВАННЫЕ СРЕДСТВА" titleColor={COLOR.white} bg="room" bgSrc={imgOf(s, "bg_room")} box={FULL} side={SIDE(s, COLOR.burgundy)}>
@@ -417,35 +427,35 @@ export function ProductsPage({ s }: { s: CardSnapshot }) {
         const line = productLine(it);
         const vols = it.variants.length === 1 && it.variants[0].volume.trim() ? `, ${it.variants[0].volume.trim()}` : "";
         return (
-          <View key={it.id} wrap={false} style={{ borderBottomWidth: 0.6, borderBottomColor: COLOR.line, paddingVertical: 8 }}>
+          <View key={it.id} wrap={!keepTogether(it.label, line, it.note)} style={{ borderBottomWidth: 0.6, borderBottomColor: COLOR.line, paddingVertical: 8 * k }}>
             <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-              <Text style={{ fontFamily: FONT.sans, fontSize: 15, width: 26, color: COLOR.burgundy }}>{i + 1}.</Text>
+              <Text style={{ fontFamily: FONT.sans, fontSize: f(15, k), width: 26, color: COLOR.burgundy }}>{i + 1}.</Text>
               <View style={{ flex: 1 }}>
-                {it.label ? <Text style={{ fontFamily: FONT.sans, fontSize: 15, color: COLOR.burgundy, marginBottom: 2 }}>{it.label}</Text> : null}
+                {it.label ? <Text style={{ fontFamily: FONT.sans, fontSize: f(15, k), color: COLOR.burgundy, marginBottom: 2 }}>{it.label}</Text> : null}
                 {it.url ? (
                   <Link src={it.url} style={{ textDecoration: "none" }}>
-                    <Text style={{ fontFamily: FONT.sans, fontSize: 14, lineHeight: 1.35, color: COLOR.burgundy }}>
+                    <Text style={{ fontFamily: FONT.sans, fontSize: f(14, k), lineHeight: 1.35, color: COLOR.burgundy }}>
                       {it.isAlternative ? "или " : ""}
                       {line}
                       {vols}
                     </Text>
                   </Link>
                 ) : (
-                  <Text style={{ fontFamily: FONT.sans, fontSize: 14, lineHeight: 1.35, color: COLOR.burgundy }}>
+                  <Text style={{ fontFamily: FONT.sans, fontSize: f(14, k), lineHeight: 1.35, color: COLOR.burgundy }}>
                     {it.isAlternative ? "или " : ""}
                     {line}
                     {vols}
                   </Text>
                 )}
-                {it.note ? <Text style={{ fontFamily: FONT.sans, fontSize: 10.5, color: COLOR.textSoft, marginTop: 2 }}>{it.note}</Text> : null}
+                {it.note ? <Text style={{ fontFamily: FONT.sans, fontSize: f(10.5, k), color: COLOR.textSoft, marginTop: 2 }}>{it.note}</Text> : null}
               </View>
-              <PriceCell item={it} />
+              <PriceCell item={it} k={k} />
             </View>
           </View>
         );
       })}
       {s.card.products.footnote.trim() && (
-        <Text style={{ fontFamily: FONT.sans, fontSize: SIZE.small, lineHeight: 1.35, marginTop: 14 }}>{s.card.products.footnote}</Text>
+        <Text style={{ fontFamily: FONT.sans, fontSize: f(SIZE.small, k), lineHeight: 1.35, marginTop: 14 * k }}>{s.card.products.footnote}</Text>
       )}
     </StdPage>
   );
@@ -455,7 +465,7 @@ export function ProductsPage({ s }: { s: CardSnapshot }) {
 
 const cell = { backgroundColor: COLOR.white, borderRadius: GEO.rowRadius } as const;
 
-export function ProceduresPage({ s }: { s: CardSnapshot }) {
+export function ProceduresPage({ s, k = 1 }: PageProps) {
   const plans = s.card.procedures.plans;
   const multi = plans.length > 1;
   return (
@@ -470,7 +480,7 @@ export function ProceduresPage({ s }: { s: CardSnapshot }) {
       {plans.map((plan) => (
         <View key={plan.id}>
           {multi && (
-            <Text minPresenceAhead={80} style={{ fontFamily: FONT.serif, fontSize: 18, color: COLOR.white, marginTop: 8, marginBottom: 8 }}>
+            <Text minPresenceAhead={80} style={{ fontFamily: FONT.serif, fontSize: f(18, k), color: COLOR.white, marginTop: 8 * k, marginBottom: 8 * k }}>
               {plan.title}
             </Text>
           )}
@@ -484,20 +494,20 @@ export function ProceduresPage({ s }: { s: CardSnapshot }) {
               .filter(Boolean)
               .join(" · ");
             return (
-              <View key={it.id} wrap={false} style={{ flexDirection: "row", marginBottom: GEO.rowGap, alignItems: "stretch" }}>
-                <View style={{ ...cell, width: 84, minHeight: 54, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontFamily: FONT.sans, fontSize: 16, color: COLOR.burgundy }}>{i + 1}</Text>
+              <View key={it.id} wrap={!keepTogether(it.name, it.description, meta)} style={{ flexDirection: "row", marginBottom: GEO.rowGap * k, alignItems: "stretch" }}>
+                <View style={{ ...cell, width: 84, minHeight: 54 * k, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontFamily: FONT.sans, fontSize: f(16, k), color: COLOR.burgundy }}>{i + 1}</Text>
                 </View>
-                <View style={{ ...cell, flex: 1, marginHorizontal: 10, paddingVertical: 9, paddingHorizontal: 14, justifyContent: "center" }}>
-                  <Text style={{ fontFamily: FONT.sans, fontSize: 14, lineHeight: 1.35 }}>
+                <View style={{ ...cell, flex: 1, marginHorizontal: 10, paddingVertical: 9 * k, paddingHorizontal: 14, justifyContent: "center" }}>
+                  <Text style={{ fontFamily: FONT.sans, fontSize: f(14, k), lineHeight: 1.35 }}>
                     {it.isAlternative ? "или " : ""}
                     {it.name}
                   </Text>
-                  {it.description ? <Text style={{ fontFamily: FONT.sans, fontSize: 12, lineHeight: 1.35, color: COLOR.textSoft, marginTop: 2 }}>{it.description}</Text> : null}
-                  {meta ? <Text style={{ fontFamily: FONT.sans, fontSize: 10.5, color: COLOR.textSoft, marginTop: 3 }}>{meta}</Text> : null}
+                  {it.description ? <Text style={{ fontFamily: FONT.sans, fontSize: f(12, k), lineHeight: 1.35, color: COLOR.textSoft, marginTop: 2 }}>{it.description}</Text> : null}
+                  {meta ? <Text style={{ fontFamily: FONT.sans, fontSize: f(10.5, k), color: COLOR.textSoft, marginTop: 3 }}>{meta}</Text> : null}
                 </View>
                 <View style={{ ...cell, width: 128, paddingHorizontal: 6, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontFamily: FONT.sans, fontSize: 14, color: COLOR.burgundy, textAlign: "center", lineHeight: 1.3 }}>{formatPrice(it.price)}</Text>
+                  <Text style={{ fontFamily: FONT.sans, fontSize: f(14, k), color: COLOR.burgundy, textAlign: "center", lineHeight: 1.3 }}>{formatPrice(it.price)}</Text>
                 </View>
               </View>
             );
@@ -514,10 +524,11 @@ const CONCL_BOX: Box = { left: GEO.marginX, top: 93, bottom: 183, width: PAGE.w 
 const PHOTO_W = 250;
 const PHOTO_H = 311;
 
-export function ConclusionPage({ s }: { s: CardSnapshot }) {
+export function ConclusionPage({ s, k = 1 }: PageProps) {
+  const size = f(14, k);
   const blocks = s.card.conclusion.blocks;
   const textW = CONCL_BOX.width - GEO.cardPadX * 2 - PHOTO_W - 16;
-  const split = splitForFloat(blocks, textW, PHOTO_H - 10);
+  const split = splitForFloat(blocks, textW, PHOTO_H - 10, size);
   const label = s.card.conclusion.buttonLabel || "Связаться со мной";
   const button = (
     <View style={{ width: "100%", height: "100%", borderRadius: 8, backgroundColor: COLOR.burgundy, alignItems: "center", justifyContent: "center" }}>
@@ -546,7 +557,7 @@ export function ConclusionPage({ s }: { s: CardSnapshot }) {
     >
       <View style={{ flexDirection: "row" }}>
         <View style={{ flex: 1, paddingRight: 16, minHeight: PHOTO_H }}>
-          <Blocks blocks={split.beside} images={s.images} size={14} />
+          <Blocks blocks={split.beside} images={s.images} size={size} />
         </View>
         <View style={{ width: PHOTO_W, marginTop: -GEO.cardPadTop + 0 }} wrap={false}>
           <Img src={imgOf(s, "specialist")} style={{ width: PHOTO_W, height: PHOTO_H, borderRadius: 30 }} />
@@ -555,23 +566,23 @@ export function ConclusionPage({ s }: { s: CardSnapshot }) {
           ) : null}
         </View>
       </View>
-      <Blocks blocks={split.below} images={s.images} size={14} />
+      <Blocks blocks={split.below} images={s.images} size={size} />
     </StdPage>
   );
 }
 
 /* ================================================================ extra pages */
 
-export function ExtraTextPage({ s, index }: { s: CardSnapshot; index: number }) {
+export function ExtraTextPage({ s, index, k = 1 }: PageProps & { index: number }) {
   const p = s.card.extraPages[index];
   return (
     <StdPage title={p.title.toUpperCase()} titleColor={COLOR.white} bg="room" bgSrc={imgOf(s, "bg_room")} box={FULL}>
-      <Blocks blocks={p.blocks} images={s.images} />
+      <Blocks blocks={p.blocks} size={f(SIZE.body, k)} images={s.images} />
     </StdPage>
   );
 }
 
-export function PhotosPage({ s, index }: { s: CardSnapshot; index: number }) {
+export function PhotosPage({ s, index, k = 1 }: PageProps & { index: number }) {
   const p = s.card.extraPages[index];
   const photos = p.photoIds.map((id) => ({ id, src: s.images[id] })).filter((x) => x.src);
   return (
@@ -583,7 +594,7 @@ export function PhotosPage({ s, index }: { s: CardSnapshot; index: number }) {
           </View>
         ))}
       </View>
-      <Blocks blocks={p.blocks} images={s.images} />
+      <Blocks blocks={p.blocks} size={f(SIZE.body, k)} images={s.images} />
     </StdPage>
   );
 }

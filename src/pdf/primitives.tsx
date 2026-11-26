@@ -2,7 +2,7 @@ import React from "react";
 import { Image, Link, Page, Svg, Line, Circle, Polyline, Text, View } from "@react-pdf/renderer";
 type Style = import("@react-pdf/renderer").Styles[string];
 import type { Block, Stroke } from "@/lib/schemas/card";
-import { COLOR, FONT, GEO, PAGE, SIZE } from "./tokens";
+import { COLOR, FONT, GEO, PAGE, SIZE, keepTogether } from "./tokens";
 import { parseInline } from "./inline";
 import type { ImageSrc } from "./snapshot";
 
@@ -70,7 +70,7 @@ export function BlockView({
           {block.items
             .filter((t) => t.trim())
             .map((t, i) => (
-              <View key={i} style={{ flexDirection: "row", marginBottom: size * 0.2 }} wrap={false}>
+              <View key={i} style={{ flexDirection: "row", marginBottom: size * 0.2 }} wrap={!keepTogether(t)}>
                 <Text style={{ ...body, width: size * 1.7, flexShrink: 0 }}>{block.type === "ol" ? `${i + 1}.` : "•"}</Text>
                 <Rich text={t} style={{ ...body, flex: 1 }} />
               </View>
@@ -82,7 +82,7 @@ export function BlockView({
         <View style={{ marginBottom: size * 0.7, borderTopWidth: 0.6, borderTopColor: COLOR.line }}>
           {block.title ? <Text style={{ ...body, fontWeight: 700, marginBottom: 4 }}>{block.title}</Text> : null}
           {block.rows.map((row, ri) => (
-            <View key={ri} wrap={false} style={{ flexDirection: "row", borderBottomWidth: 0.6, borderBottomColor: COLOR.line }}>
+            <View key={ri} wrap={!keepTogether(...row)} style={{ flexDirection: "row", borderBottomWidth: 0.6, borderBottomColor: COLOR.line }}>
               {row.map((cell, ci) => (
                 <Text
                   key={ci}
@@ -105,7 +105,7 @@ export function BlockView({
       const src = block.assetId ? images[block.assetId] : undefined;
       return src ? (
         <View wrap={false} style={{ marginBottom: size * 0.6 }}>
-          <Img src={src} style={{ width: "100%", maxHeight: 260, borderRadius: 14, objectFit: "contain" }} />
+          <Img src={src} style={{ width: "100%", maxHeight: (260 * size) / SIZE.body, borderRadius: 14, objectFit: "contain" }} />
           {block.caption ? <Text style={{ ...body, fontSize: size - 3, color: COLOR.muted, marginTop: 3 }}>{block.caption}</Text> : null}
         </View>
       ) : null;
@@ -113,7 +113,7 @@ export function BlockView({
     case "note":
       return block.text.trim() ? (
         <View
-          wrap={false}
+          wrap={!keepTogether(block.title, block.text)}
           style={{
             marginBottom: size * 0.6,
             padding: 10,
@@ -155,7 +155,7 @@ export function Blocks({ blocks, size, images }: { blocks: Block[]; size?: numbe
  * Rough height estimate of blocks in a column (used to decide how many blocks sit beside a floating
  * image). Only affects layout balance — never overlap: text can't run under an image either way.
  */
-export function estimateHeight(blocks: Block[], colWidth: number, size = SIZE.body): number {
+export function estimateHeight(blocks: Block[], colWidth: number, size: number = SIZE.body): number {
   const cpl = Math.max(8, Math.floor(colWidth / (size * 0.56)));
   const line = size * 1.42;
   let h = 0;
@@ -171,7 +171,7 @@ export function estimateHeight(blocks: Block[], colWidth: number, size = SIZE.bo
 }
 
 /** Splits blocks into "beside the float" and "full width below" so a tall image doesn't leave a gap. */
-export function splitForFloat(blocks: Block[], colWidth: number, floatHeight: number, size = SIZE.body) {
+export function splitForFloat(blocks: Block[], colWidth: number, floatHeight: number, size: number = SIZE.body) {
   const beside: Block[] = [];
   let used = 0;
   let i = 0;
