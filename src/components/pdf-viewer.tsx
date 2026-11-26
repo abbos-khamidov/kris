@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
+ * Page width at 100 %: as wide as the panel, but small enough for a whole page to be visible when the
+ * panel is large. Never narrower than a comfortably readable 360 px for height alone.
+ */
+const fitWidth = (width: number, height: number, ratio: number) => Math.min(width, Math.max(360, height * ratio));
+
+/**
  * Shows the pages of the REAL generated PDF (rasterised with pdf.js, which also works on iOS where PDFs
  * cannot be embedded). Always light, regardless of the site theme. Zoom with the buttons, ctrl+wheel or
  * a two-finger pinch (the scroll area allows native pinch-zoom).
@@ -26,7 +32,8 @@ export function PdfViewer({
   const [doc, setDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [zoom, setZoom] = useState(1);
   const [current, setCurrent] = useState(1);
-  const [width, setWidth] = useState(0);
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  const { width, height } = box;
   const [rendering, setRendering] = useState(false);
   const [failed, setFailed] = useState(false);
   const taskRef = useRef<import("pdfjs-dist").PDFDocumentLoadingTask | null>(null);
@@ -37,10 +44,19 @@ export function PdfViewer({
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(Math.floor(el.clientWidth)));
+    const measure = () => setBox({ width: Math.floor(el.clientWidth), height: Math.floor(el.clientHeight) });
+    let timer: ReturnType<typeof setTimeout>;
+    // Resizing and dragging the divider fire continuously: redraw once the size settles.
+    const ro = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(measure, 120);
+    });
     ro.observe(el);
-    setWidth(Math.floor(el.clientWidth));
-    return () => ro.disconnect();
+    measure();
+    return () => {
+      clearTimeout(timer);
+      ro.disconnect();
+    };
   }, []);
 
   // Load the document whenever a new blob arrives. The previous one stays on screen until then.
@@ -80,7 +96,8 @@ export function PdfViewer({
         const page = await doc.getPage(n);
         const target = canvases.current[n - 1];
         if (cancelled || !target) continue;
-        const scale = ((width - 16) * zoom) / page.getViewport({ scale: 1 }).width;
+        const natural = page.getViewport({ scale: 1 });
+        const scale = (fitWidth(width - 16, height - 16, natural.width / natural.height) * zoom) / natural.width;
         const viewport = page.getViewport({ scale: scale * dpr });
         const buffer = document.createElement("canvas");
         buffer.width = Math.floor(viewport.width);
@@ -108,7 +125,7 @@ export function PdfViewer({
       cancelled = true;
       task?.cancel();
     };
-  }, [doc, width, zoom]);
+  }, [doc, width, height, zoom]);
 
   // Track the visible page.
   const onScroll = () => {
@@ -150,7 +167,7 @@ export function PdfViewer({
           <Button type="button" variant="ghost" size="icon" className="size-11 sm:size-8" aria-label="Увеличить" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))}>
             <Plus />
           </Button>
-          <Button type="button" variant="ghost" size="icon" className="size-11 sm:size-8" aria-label="По ширине" onClick={() => setZoom(1)}>
+          <Button type="button" variant="ghost" size="icon" className="size-11 sm:size-8" aria-label="По размеру окна" onClick={() => setZoom(1)}>
             <Maximize2 />
           </Button>
         </div>
@@ -169,7 +186,7 @@ export function PdfViewer({
       >
         {error && <p className="p-4 text-center text-sm text-red-700">{error}</p>}
         {failed && !error && <p className="p-4 text-center text-sm text-red-700">Не удалось показать предпросмотр. Измените масштаб или обновите страницу — скачивание PDF работает.</p>}
-        {!blob && !error && (
+        {!doc && !error && !failed && (
           <div className="grid h-full min-h-64 place-items-center text-sm text-neutral-600">
             <span className="flex items-center gap-2">
               <Loader2 className="size-4 animate-spin" /> Готовим предпросмотр…

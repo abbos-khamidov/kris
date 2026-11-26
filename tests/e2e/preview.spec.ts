@@ -46,9 +46,40 @@ test("preview redraws after an edit, and zooming repeatedly causes no errors", a
     await page.getByRole("button", { name: "Увеличить" }).click();
     await page.getByRole("button", { name: "Уменьшить" }).click();
   }
-  await page.getByRole("button", { name: "По ширине" }).click();
-  await page.setViewportSize({ width: 1100, height: 800 });
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: "По размеру окна" }).click();
+  // enlarging the window: pages follow, a whole page stays visible, nothing is flipped or stretched
+  for (const size of [{ width: 1100, height: 700 }, { width: 2560, height: 1300 }, { width: 1280, height: 800 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(size);
+    await page.waitForTimeout(60);
+  }
+  const divider = page.getByRole("separator", { name: "Изменить ширину предпросмотра" });
+  for (let i = 0; i < 14; i++) await divider.press("ArrowLeft");
   await expect(page.getByLabel("Обновление")).toHaveCount(0, { timeout: 30_000 });
+  const shape = () =>
+    page.getByLabel("Страница 1", { exact: true }).evaluate((c) => {
+      const r = c.getBoundingClientRect();
+      const area = c.parentElement!.parentElement!.getBoundingClientRect();
+      return { ratio: r.width / r.height, fits: r.height <= area.height + 1 && r.width <= area.width + 1, transform: getComputedStyle(c).transform };
+    });
+  await expect.poll(async () => (await shape()).fits, { timeout: 30_000 }).toBe(true);
+  const page1 = await shape();
+  expect(page1.ratio).toBeCloseTo(595 / 822, 1);
+  expect(page1.transform).toBe("none");
+  // same orientation as before the resizing: the top-left corner of the picture still matches
+  const sample = () =>
+    page.getByLabel("Страница 3", { exact: true }).evaluate((c) => {
+      const small = document.createElement("canvas");
+      small.width = 20;
+      small.height = 28;
+      const g = small.getContext("2d")!;
+      g.drawImage(c as HTMLCanvasElement, 0, 0, 20, 28);
+      return Array.from(g.getImageData(0, 0, 20, 28).data);
+    });
+  const big = await sample();
+  await page.getByRole("button", { name: "Уменьшить" }).click();
+  await expect(page.getByLabel("Обновление")).toHaveCount(0, { timeout: 30_000 });
+  const small = await sample();
+  const difference = big.reduce((sum, v, i) => sum + Math.abs(v - small[i]), 0) / big.length;
+  expect(difference).toBeLessThan(8);
   expect(errors).toEqual([]);
 });
