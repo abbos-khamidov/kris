@@ -38,7 +38,7 @@ interface Props {
 }
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-const AI_CONSENT = "kris.voice.ai.v1";
+const AI_CONSENT = "kris.voice.ai.v2";
 const hasAiConsent = () => {
   try {
     return localStorage.getItem(AI_CONSENT) === "1";
@@ -375,7 +375,7 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
             <DialogTitle>Голосовой ввод</DialogTitle>
             <DialogDescription>
               Распознавание речи выполняет сам браузер, и обычно это происходит на серверах его разработчика (например, Google для Chrome).
-              {smart.enabled && smart.ai && " Чтобы исправить ошибки, надиктованный текст (не аудио) отправляется в Claude (Anthropic)."} Аудио приложением не сохраняется. Не
+              {smart.enabled && smart.ai && " Чтобы исправить ошибки, надиктованный текст (не аудио) отправляется в сервис исправления: Claude (Anthropic) или ChatGPT (OpenAI)."} Аудио приложением не сохраняется. Не
               диктуйте фамилии пациентов и другие данные, которые нельзя передавать третьим лицам, либо используйте ручной ввод.
             </DialogDescription>
           </DialogHeader>

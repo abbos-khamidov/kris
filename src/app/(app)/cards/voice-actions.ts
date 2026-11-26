@@ -1,7 +1,7 @@
 "use server";
 import { z } from "zod";
 import { guard, ok } from "@/lib/action";
-import { correctWithClaude, correctionAvailable } from "@/lib/ai/correct";
+import { correctSpeech, correctionAvailable } from "@/lib/ai/correct";
 import { getCtx } from "@/lib/db";
 
 const Input = z.object({
@@ -37,6 +37,6 @@ export async function correctSpeechAction(input: unknown) {
     const glossary = [...new Set([...products.filter((p) => !p.archived_at).map((p) => [p.brand, p.name].filter(Boolean).join(" ")), ...v.terms])]
       .filter(Boolean)
       .slice(0, 150);
-    return ok({ text: await correctWithClaude({ phrase: v.phrase, context: v.context, glossary }) });
+    return ok({ text: await correctSpeech({ phrase: v.phrase, context: v.context, glossary }) });
   });
 }
