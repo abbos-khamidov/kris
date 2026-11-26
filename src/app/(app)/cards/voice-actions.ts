@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { guard, ok } from "@/lib/action";
 import { correctSpeech, correctionAvailable } from "@/lib/ai/correct";
+import { textGuards } from "@/lib/ai/privacy";
 import { getCtx } from "@/lib/db";
 
 const Input = z.object({
@@ -33,10 +34,8 @@ export async function correctSpeechAction(input: unknown) {
     const ctx = await getCtx();
     const v = Input.parse(input);
     if (!correctionAvailable() || !allowed(ctx.user.id)) return ok({ text: null });
-    const products = await ctx.db.select<{ name: string; brand: string; archived_at: string | null }>("products", { limit: 200 });
-    const glossary = [...new Set([...products.filter((p) => !p.archived_at).map((p) => [p.brand, p.name].filter(Boolean).join(" ")), ...v.terms])]
-      .filter(Boolean)
-      .slice(0, 150);
-    return ok({ text: await correctSpeech({ phrase: v.phrase, context: v.context, glossary }) });
+    const { names, terms } = await textGuards(ctx);
+    const glossary = [...new Set([...terms, ...v.terms])].filter(Boolean).slice(0, 150);
+    return ok({ text: await correctSpeech({ phrase: v.phrase, context: v.context, glossary, names }) });
   });
 }

@@ -9,6 +9,7 @@ import { MediaPicker } from "@/components/media-picker";
 import { PatientPhotoPicker } from "@/components/patient-photo-picker";
 import { PdfViewer } from "@/components/pdf-viewer";
 import { SaveBadge } from "@/components/save-badge";
+import { ProofreadProvider } from "@/components/proofread";
 import { SmartVoiceProvider } from "@/components/smart-voice";
 import { useAutosave } from "@/hooks/use-autosave";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -333,7 +334,7 @@ export function CardEditor({
           Нажмите микрофон в любом поле и говорите: текст сразу появится в поле, ошибки исправятся. Можно говорить «запятая», «двоеточие», «новая строка».
         </p>
       )}
-      {body}
+      <ProofreadProvider enabled={section !== "cover"}>{body}</ProofreadProvider>
     </SmartVoiceProvider>
   );
 

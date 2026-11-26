@@ -14,7 +14,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}/login`,
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { NEXT_DIST_DIR: ".next-test", KRIS_DATA_DIR: ".data-test", ANTHROPIC_API_KEY: "test-key-for-local-stub", ANTHROPIC_BASE_URL: "http://localhost:4555", SESSION_SECRET: "test-secret-not-for-production-0123456789" },
+    env: { NEXT_DIST_DIR: ".next-test", KRIS_DATA_DIR: ".data-test", ANTHROPIC_API_KEY: "test-key-for-local-stub", ANTHROPIC_BASE_URL: "http://localhost:4555", OPENAI_API_KEY: "test-key-for-local-stub", OPENAI_BASE_URL: "http://localhost:4556/v1", SESSION_SECRET: "test-secret-not-for-production-0123456789" },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

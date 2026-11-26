@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, Copy, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Proofread } from "@/components/proofread";
 import { TemplateBar } from "@/components/template-bar";
 import type { TemplateKind } from "@/lib/templates";
 import { Button } from "@/components/ui/button";
@@ -163,6 +164,7 @@ function BlockBody({
       return (
         <div className="space-y-2">
           <Input value={b.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Заголовок примечания (необязательно)" aria-label={`${label}: заголовок`} className="h-11 sm:h-8" />
+          <Proofread value={b.title} onChange={(title) => onChange({ title })} />
           <VoiceInput format value={b.text} onChange={(text) => onChange({ text })} rows={3} placeholder="Текст примечания" aria-label={label} />
         </div>
       );
@@ -170,6 +172,7 @@ function BlockBody({
       return (
         <div className="space-y-2">
           <Input value={b.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Название блока" aria-label={`${label}: название`} className="h-11 sm:h-8" />
+          <Proofread value={b.title} onChange={(title) => onChange({ title })} />
           <VoiceInput format value={b.text} onChange={(text) => onChange({ text })} rows={4} placeholder="Содержимое" aria-label={label} />
         </div>
       );
@@ -190,6 +193,7 @@ function BlockBody({
             )}
           </div>
           <Input value={b.caption} onChange={(e) => onChange({ caption: e.target.value })} placeholder="Подпись (необязательно)" aria-label={`${label}: подпись`} className="h-11 sm:h-8" />
+          <Proofread value={b.caption} onChange={(caption) => onChange({ caption })} />
         </div>
       );
   }
@@ -221,6 +225,8 @@ function ListBody({ block: b, label, onChange }: { block: Block; label: string; 
 }
 
 function TableBody({ block: b, label, onChange }: { block: Block; label: string; onChange: (p: Partial<Block>) => void }) {
+  // One button for the whole table, bound to the cell that was edited last.
+  const [active, setActive] = useState<[number, number] | null>(null);
   const cols = Math.max(2, b.rows[0]?.length ?? 2);
   const rows = b.rows.length ? b.rows : [Array(cols).fill("")];
   const setCell = (r: number, c: number, v: string) =>
@@ -228,6 +234,7 @@ function TableBody({ block: b, label, onChange }: { block: Block; label: string;
   return (
     <div className="space-y-2">
       <Input value={b.title} onChange={(e) => onChange({ title: e.target.value })} placeholder="Название таблицы (необязательно)" aria-label={`${label}: название`} className="h-11 sm:h-8" />
+      <Proofread value={b.title} onChange={(title) => onChange({ title })} />
       <div className="space-y-1.5 overflow-x-auto">
         {rows.map((row, r) => (
           <div key={r} className="flex gap-1.5">
@@ -236,6 +243,7 @@ function TableBody({ block: b, label, onChange }: { block: Block; label: string;
                 key={c}
                 value={row[c] ?? ""}
                 onChange={(e) => setCell(r, c, e.target.value)}
+                onFocus={() => setActive([r, c])}
                 aria-label={`${label}: строка ${r + 1}, столбец ${c + 1}`}
                 className={cn("h-11 min-w-28 flex-1 sm:h-8", r === 0 && b.header && "font-semibold")}
               />
@@ -246,6 +254,13 @@ function TableBody({ block: b, label, onChange }: { block: Block; label: string;
           </div>
         ))}
       </div>
+      {active && rows[active[0]]?.[active[1]] !== undefined && (
+        <Proofread
+          key={active.join("-")}
+          value={rows[active[0]][active[1]]}
+          onChange={(v) => setCell(active[0], active[1], v)}
+        />
+      )}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="ghost" size="sm" className="h-11 sm:h-7" onClick={() => onChange({ rows: [...rows, Array(cols).fill("")] })}>
           <Plus /> Строка

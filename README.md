@@ -35,7 +35,7 @@ node scripts/create-local-user.mjs <логин> <пароль>   # демо-по
 1. Получите ключ на console.anthropic.com или platform.openai.com (платные сервисы: оплата за использование, нужен баланс API).
 2. Vercel → проект → Settings → Environment Variables → добавьте `ANTHROPIC_API_KEY` и/или `OPENAI_API_KEY` (Production), затем Deployments → Redeploy.
 3. Без ключа диктовка работает, но без исправления орфографии (только заглавные буквы и знаки препинания голосом).
-4. Модели: `claude-opus-5-5` (дешевле — `ANTHROPIC_MODEL=claude-haiku-5-5`) и `gpt-6.2-sol` (дешевле — `OPENAI_MODEL=gpt-6-luna`). Если заданы оба ключа, сначала Claude, при ошибке запроса — ChatGPT.
+4. Модели: `claude-opus-5-5` (дешевле — `ANTHROPIC_MODEL=claude-haiku-5-5`) и `gpt-4.1-mini` (переопределяется `OPENAI_MODEL`). Если заданы оба ключа, сначала Claude, при ошибке запроса — ChatGPT.
 Распознавание речи — в Chrome, Edge и Safari. Надиктованный текст отправляется в Anthropic или OpenAI.
 
 ### Свой домен

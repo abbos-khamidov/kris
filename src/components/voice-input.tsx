@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Proofread } from "@/components/proofread";
 import { useSmartVoice } from "@/components/smart-voice";
 import { correctSpeechAction } from "@/app/(app)/cards/voice-actions";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,8 @@ interface Props {
   "aria-label"?: string;
   /** Shows **bold** / ==highlight== / !!important!! buttons that wrap the selected text. */
   format?: boolean;
+  /** false for names, brands and dosages: they must not be "corrected". */
+  proofread?: boolean;
 }
 
 const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -53,7 +56,7 @@ const hasAiConsent = () => {
  *  - smart mode (card sections, ADR-019): each phrase is written into the field immediately and its
  *    spelling/punctuation is then corrected in place. Nothing existing is deleted; every phrase can be undone.
  */
-export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeholder, id, disabled, className, format, ...rest }: Props) {
+export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeholder, id, disabled, className, format, proofread = true, ...rest }: Props) {
   const smart = useSmartVoice();
   const fieldRef = useRef<HTMLTextAreaElement | HTMLInputElement | null>(null);
   const sessionRef = useRef<SpeechSession | null>(null);
@@ -349,6 +352,10 @@ export function VoiceInput({ value, onChange, multiline = true, rows = 4, placeh
             </Button>
           </div>
         </div>
+      )}
+
+      {proofread && phase === "idle" && !disabled && (
+        <Proofread value={value} onChange={write} />
       )}
 
       {undoStack.length > 0 && phase !== "review" && (
